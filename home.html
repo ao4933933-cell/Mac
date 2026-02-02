@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>McDonald's Premium</title>
+    <style>
+        :root {
+            --mcd-red: #db0007;
+            --mcd-yellow: #ffbc0d;
+            --pure-white: #ffffff;
+            --text-main: #1a1a1b;
+            --text-muted: #666666;
+            --light-border: #f0f0f0;
+            --soft-shadow: 0 8px 30px rgba(0,0,0,0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--pure-white); /* Fundo 100% branco */
+            color: var(--text-main);
+            padding-bottom: 100px;
+        }
+
+        /* Banner Principal */
+        .banner {
+            width: 100%;
+            height: 230px;
+            background: url('banner.jpg') center/cover no-repeat;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+        }
+
+        /* Menu Flutuante Superior */
+        .quick-nav {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            background: var(--pure-white);
+            margin: -40px 20px 20px;
+            padding: 25px 10px;
+            border-radius: 20px;
+            box-shadow: var(--soft-shadow);
+            border: 1px solid var(--light-border);
+            position: relative;
+            z-index: 10;
+        }
+
+        .nav-item {
+            text-align: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #444;
+        }
+
+        .icon-bg {
+            width: 55px;
+            height: 55px;
+            background: #fff1f1;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 24px;
+            color: var(--mcd-red);
+            transition: 0.3s;
+        }
+
+        /* Barra de Notificação Realista */
+        .notif-bar {
+            background: #fff8f8;
+            margin: 0 20px 25px;
+            padding: 14px 20px;
+            border-radius: 15px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            border-left: 5px solid var(--mcd-red);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+        .notif-bar b { color: var(--mcd-red); margin-right: 8px; }
+
+        /* Lista de Planos (Cards Premium) */
+        .container { padding: 0 20px; }
+
+        .plan-card {
+            background: var(--pure-white);
+            border-radius: 25px;
+            overflow: hidden;
+            margin-bottom: 35px;
+            border: 1px solid var(--light-border);
+            box-shadow: var(--soft-shadow);
+        }
+
+        .plan-header {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .plan-header h3 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .plan-header p {
+            color: var(--mcd-red);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .plan-img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .plan-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            padding: 25px;
+            background: #fafafa;
+            gap: 20px;
+            border-top: 1px solid var(--light-border);
+        }
+
+        .grid-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .value {
+            font-size: 17px;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .btn-buy {
+            display: block;
+            width: calc(100% - 50px);
+            margin: 10px auto 25px;
+            background: var(--mcd-red);
+            color: white;
+            text-align: center;
+            padding: 18px;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 18px;
+            box-shadow: 0 10px 20px rgba(219, 0, 7, 0.2);
+            transition: transform 0.2s;
+        }
+
+        .btn-buy:active { transform: scale(0.96); }
+
+        /* Bottom Nav Moderna */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            height: 85px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid var(--light-border);
+            padding-bottom: 10px;
+            z-index: 100;
+        }
+
+        .tab-item {
+            text-align: center;
+            text-decoration: none;
+            color: #b1b1b1;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .tab-item.active { color: var(--mcd-red); }
+        .tab-icon { font-size: 26px; display: block; margin-bottom: 5px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="banner"></div>
+
+    <div class="quick-nav">
+        <div class="nav-item"><div class="icon-bg">💰</div>Recarga</div>
+        <div class="nav-item"><div class="icon-bg">📤</div>Saque</div>
+        <div class="nav-item"><div class="icon-bg">📦</div>Meus</div>
+        <div class="nav-item"><div class="icon-bg">📅</div>Check-in</div>
+    </div>
+
+    <div class="notif-bar">
+        📢 <span><b>95******</b> Recarregou R$ 400,00</span>
+    </div>
+
+    <div class="container">
+        
+        <div class="plan-card">
+            <div class="plan-header">
+                <h3>McDonald's M1</h3>
+                <p>Renda Diária • Saque Diário</p>
+            </div>
+            <img src="plano1.jpg" class="plan-img">
+            <div class="plan-grid">
+                <div class="grid-item"><span class="label">Preço:</span><span class="value">R$ 60,00</span></div>
+                <div class="grid-item"><span class="label">Diário:</span><span class="value">R$ 3,50</span></div>
+                <div class="grid-item"><span class="label">Ciclo:</span><span class="value">60 Dias</span></div>
+                <div class="grid-item"><span class="label">Total:</span><span class="value">R$ 210,00</span></div>
+            </div>
+            <a href="#" class="btn-buy">Comprar agora</a>
+        </div>
+
+        <div class="plan-card">
+            <div class="plan-header">
+                <h3>McDonald's M2</h3>
+                <p>Renda Diária • Saque Diário</p>
+            </div>
+            <img src="plano2.jpg" class="plan-img">
+            <div class="plan-grid">
+                <div class="grid-item"><span class="label">Preço:</span><span class="value">R$ 150,00</span></div>
+                <div class="grid-item"><span class="label">Diário:</span><span class="value">R$ 12,50</span></div>
+                <div class="grid-item"><span class="label">Ciclo:</span><span class="value">60 Dias</span></div>
+                <div class="grid-item"><span class="label">Total:</span><span class="value">R$ 750,00</span></div>
+            </div>
+            <a href="#" class="btn-buy">Comprar agora</a>
+        </div>
+
+        <div class="plan-card">
+            <div class="plan-header">
+                <h3>McDonald's M4</h3>
+                <p>Renda Diária • Saque Diário</p>
+            </div>
+            <img src="plano4.jpg" class="plan-img">
+            <div class="plan-grid">
+                <div class="grid-item"><span class="label">Preço:</span><span class="value">R$ 750,00</span></div>
+                <div class="grid-item"><span class="label">Diário:</span><span class="value">R$ 75,00</span></div>
+                <div class="grid-item"><span class="label">Ciclo:</span><span class="value">60 Dias</span></div>
+                <div class="grid-item"><span class="label">Total:</span><span class="value">R$ 4.500,00</span></div>
+            </div>
+            <a href="#" class="btn-buy">Comprar agora</a>
+        </div>
+
+    </div>
+
+    <nav class="tab-bar">
+        <a href="#" class="tab-item active"><span class="tab-icon">🏠</span>Home</a>
+        <a href="#" class="tab-item"><span class="tab-icon">👥</span>Convite</a>
+        <a href="#" class="tab-item"><span class="tab-icon">🏆</span>VIP</a>
+        <a href="#" class="tab-item"><span class="tab-icon">👤</span>Perfil</a>
+    </nav>
+
+</body>
+</html>

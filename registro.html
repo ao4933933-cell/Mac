@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <title>McDonald's - Criar Conta</title>
+    
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+      import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
+        authDomain: "mac09875.firebaseapp.com",
+        projectId: "mac09875",
+        storageBucket: "mac09875.firebasestorage.app",
+        messagingSenderId: "1036489448526",
+        appId: "1:1036489448526:web:aa40d000e12f21a6b0771f",
+        measurementId: "G-R60G1KZPFR"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+      const auth = getAuth(app);
+
+      // Função de Registro
+      window.handleRegister = async (event) => {
+          event.preventDefault();
+          const email = document.getElementById('email').value;
+          const password = document.getElementById('password').value;
+          const confirmPassword = document.getElementById('confirmPassword').value;
+
+          if(password !== confirmPassword) {
+              alert("As senhas não coincidem!");
+              return;
+          }
+
+          try {
+              await createUserWithEmailAndPassword(auth, email, password);
+              alert("Conta criada com sucesso!");
+              window.location.href = "home.html";
+          } catch (error) {
+              alert("Erro ao criar conta: " + error.message);
+          }
+      };
+    </script>
+
+    <style>
+        :root {
+            --mcd-red: #db0007;
+            --pure-white: #ffffff !important;
+            --bg-light: #f8f9fa;
+            --text-dark: #1a1a1b;
+            --text-muted: #9aa0a6;
+            --border-color: #e8eaed;
+            --soft-shadow: 0 10px 40px rgba(0,0,0,0.06);
+        }
+
+        /* Garantia de Fundo Branco Total */
+        html, body {
+            background-color: #f1f3f4 !important; /* Cor de fundo da página atrás do card */
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-wrapper {
+            background-color: var(--pure-white);
+            min-height: 100vh;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            position: relative;
+            overflow-x: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        /* Banner Superior conforme imagem 616726.jpg */
+        .header-image {
+            width: 100%;
+            height: 280px;
+            background: url('bannerlogineregistro.jpg') center/cover no-repeat;
+            position: relative;
+        }
+
+        /* Card de Formulário com Curva Estilo Arby's */
+        .form-container {
+            background: var(--pure-white);
+            margin-top: -40px;
+            border-radius: 40px 40px 0 0;
+            padding: 35px 25px;
+            position: relative;
+            z-index: 5;
+        }
+
+        /* Seletor de Login/Cadastro */
+        .tabs {
+            display: flex;
+            background: #f1f3f4;
+            padding: 6px;
+            border-radius: 15px;
+            margin-bottom: 35px;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 12px;
+            transition: 0.3s;
+        }
+
+        .tab.active {
+            background: var(--pure-white);
+            color: var(--mcd-red);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        /* Estilização dos Inputs */
+        .input-group {
+            margin-bottom: 22px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 8px;
+            margin-left: 5px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 16px 20px;
+            background: #f8f9fa;
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            font-size: 15px;
+            color: var(--text-dark);
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--mcd-red);
+            background: var(--pure-white);
+            box-shadow: 0 0 0 4px rgba(219, 0, 7, 0.05);
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .toggle-pass {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        /* Botão Criar Conta conforme 616721.jpg */
+        .btn-submit {
+            width: 100%;
+            background: var(--mcd-red);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 800;
+            margin-top: 15px;
+            box-shadow: 0 8px 20px rgba(219, 0, 7, 0.25);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-submit:active {
+            transform: scale(0.97);
+        }
+
+        .footer-link {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .footer-link a {
+            color: var(--mcd-red);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        <div class="header-image"></div>
+
+        <div class="form-container">
+            <div class="tabs">
+                <a href="index.html" class="tab">Login</a>
+                <a href="#" class="tab active">Cadastro</a>
+            </div>
+
+            <form id="registerForm" onsubmit="handleRegister(event)">
+                <div class="input-group">
+                    <label>E-mail</label>
+                    <input type="email" id="email" placeholder="Digite seu e-mail" class="input-field" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Senha</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="password" placeholder="Digite sua senha" class="input-field" required>
+                        <span class="toggle-pass">👁️</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Confirmar senha</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="confirmPassword" placeholder="Confirme sua senha" class="input-field" required>
+                        <span class="toggle-pass">👁️</span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Código de convite (opcional)</label>
+                    <input type="text" placeholder="Código de convite (opcional)" class="input-field">
+                </div>
+
+                <button type="submit" class="btn-submit">Criar Conta</button>
+            </form>
+
+            <div class="footer-link">
+                Já tem uma conta? <a href="index.html">Faça Login</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -3,45 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
     <title>McDonald's Premium</title>
+    
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
+        authDomain: "mac09875.firebaseapp.com",
+        projectId: "mac09875",
+        storageBucket: "mac09875.firebasestorage.app",
+        messagingSenderId: "1036489448526",
+        appId: "1:1036489448526:web:aa40d000e12f21a6b0771f",
+        measurementId: "G-R60G1KZPFR"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+    </script>
+
     <style>
         :root {
             --mcd-red: #db0007;
             --mcd-yellow: #ffbc0d;
-            --pure-white: #ffffff;
+            --pure-white: #ffffff !important;
             --text-main: #1a1a1b;
             --text-muted: #666666;
             --light-border: #f0f0f0;
             --soft-shadow: 0 8px 30px rgba(0,0,0,0.05);
         }
 
-        * {
+        /* Reset e Força do Fundo Branco */
+        html, body {
+            background-color: var(--pure-white) !important;
+            background: var(--pure-white) !important;
+            color: var(--text-main);
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: transparent;
         }
 
         body {
-            background-color: var(--pure-white); /* Fundo 100% branco */
-            color: var(--text-main);
-            padding-bottom: 100px;
+            padding-bottom: 110px;
         }
 
         /* Banner Principal */
         .banner {
             width: 100%;
             height: 230px;
-            background: url('banner.jpg') center/cover no-repeat;
+            background-color: #eee;
+            background-image: url('banner.jpg'); 
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
             border-bottom-left-radius: 30px;
             border-bottom-right-radius: 30px;
         }
 
-        /* Menu Flutuante Superior */
+        /* Menu de Ações Superior */
         .quick-nav {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            background: var(--pure-white);
+            background: var(--pure-white) !important;
             margin: -40px 20px 20px;
             padding: 25px 10px;
             border-radius: 20px;
@@ -61,7 +95,7 @@
         .icon-bg {
             width: 55px;
             height: 55px;
-            background: #fff1f1;
+            background: #fff1f1 !important;
             border-radius: 18px;
             display: flex;
             align-items: center;
@@ -69,12 +103,11 @@
             margin: 0 auto 10px;
             font-size: 24px;
             color: var(--mcd-red);
-            transition: 0.3s;
         }
 
-        /* Barra de Notificação Realista */
+        /* Barra de Notificação */
         .notif-bar {
-            background: #fff8f8;
+            background: #fff8f8 !important;
             margin: 0 20px 25px;
             padding: 14px 20px;
             border-radius: 15px;
@@ -85,13 +118,17 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.02);
         }
 
+        .notif-bar span { color: #333; }
         .notif-bar b { color: var(--mcd-red); margin-right: 8px; }
 
-        /* Lista de Planos (Cards Premium) */
-        .container { padding: 0 20px; }
+        /* Container de Planos */
+        .container { 
+            padding: 0 20px;
+            background-color: var(--pure-white) !important;
+        }
 
         .plan-card {
-            background: var(--pure-white);
+            background: var(--pure-white) !important;
             border-radius: 25px;
             overflow: hidden;
             margin-bottom: 35px;
@@ -102,12 +139,14 @@
         .plan-header {
             padding: 20px;
             text-align: center;
+            background: var(--pure-white) !important;
         }
 
         .plan-header h3 {
             font-size: 22px;
             font-weight: 800;
             letter-spacing: -0.5px;
+            color: #1a1a1b;
         }
 
         .plan-header p {
@@ -116,7 +155,6 @@
             font-weight: 700;
             text-transform: uppercase;
             margin-top: 4px;
-            letter-spacing: 0.5px;
         }
 
         .plan-img {
@@ -124,13 +162,14 @@
             height: 220px;
             object-fit: cover;
             display: block;
+            background-color: #f9f9f9;
         }
 
         .plan-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             padding: 25px;
-            background: #fafafa;
+            background: #fafafa !important;
             gap: 20px;
             border-top: 1px solid var(--light-border);
         }
@@ -152,12 +191,13 @@
             color: #000;
         }
 
+        /* Botão de Compra Estilo Premium */
         .btn-buy {
             display: block;
             width: calc(100% - 50px);
             margin: 10px auto 25px;
-            background: var(--mcd-red);
-            color: white;
+            background: var(--mcd-red) !important;
+            color: white !important;
             text-align: center;
             padding: 18px;
             border-radius: 20px;
@@ -168,16 +208,17 @@
             transition: transform 0.2s;
         }
 
-        .btn-buy:active { transform: scale(0.96); }
+        .btn-buy:active {
+            transform: scale(0.96);
+        }
 
-        /* Bottom Nav Moderna */
+        /* Bottom Tab Bar */
         .tab-bar {
             position: fixed;
             bottom: 0;
             width: 100%;
             height: 85px;
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 1) !important;
             display: flex;
             justify-content: space-around;
             align-items: center;
@@ -221,7 +262,7 @@
                 <h3>McDonald's M1</h3>
                 <p>Renda Diária • Saque Diário</p>
             </div>
-            <img src="plano1.jpg" class="plan-img">
+            <img src="plano1.jpg" class="plan-img" alt="Unidade M1">
             <div class="plan-grid">
                 <div class="grid-item"><span class="label">Preço:</span><span class="value">R$ 60,00</span></div>
                 <div class="grid-item"><span class="label">Diário:</span><span class="value">R$ 3,50</span></div>
@@ -236,7 +277,7 @@
                 <h3>McDonald's M2</h3>
                 <p>Renda Diária • Saque Diário</p>
             </div>
-            <img src="plano2.jpg" class="plan-img">
+            <img src="plano2.jpg" class="plan-img" alt="Unidade M2">
             <div class="plan-grid">
                 <div class="grid-item"><span class="label">Preço:</span><span class="value">R$ 150,00</span></div>
                 <div class="grid-item"><span class="label">Diário:</span><span class="value">R$ 12,50</span></div>
@@ -251,7 +292,7 @@
                 <h3>McDonald's M4</h3>
                 <p>Renda Diária • Saque Diário</p>
             </div>
-            <img src="plano4.jpg" class="plan-img">
+            <img src="plano4.jpg" class="plan-img" alt="Unidade M4">
             <div class="plan-grid">
                 <div class="grid-item"><span class="label">Preço:</span><span class="value">R$ 750,00</span></div>
                 <div class="grid-item"><span class="label">Diário:</span><span class="value">R$ 75,00</span></div>

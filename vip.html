@@ -2,19 +2,16 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="color-scheme" content="dark">
-    <title>McDonald's Elite - VIP Missions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light">
+    <title>McDonald's Premium VIP</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-      import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
@@ -22,418 +19,302 @@
         projectId: "mac09875",
         storageBucket: "mac09875.firebasestorage.app",
         messagingSenderId: "1036489448526",
-        appId: "1:1036489448526:web:aa40d000e12f21a6b0771f"
+        appId: "1:1036489448526:web:aa40d000e12f21a6b0771f",
+        measurementId: "G-R60G1KZPFR"
       };
 
       const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
-
-      // SweetAlert Premium Toast
-      const Toast = Swal.mixin({
-        toast: true,
-        position: 'top',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        background: '#1a1a1a',
-        color: '#ffffff'
-      });
-
-      onAuthStateChanged(auth, async (user) => {
-          if (user) {
-              const docRef = doc(db, "users", user.uid);
-              const docSnap = await getDoc(docRef);
-              if (docSnap.exists()) {
-                  const data = docSnap.data();
-                  document.getElementById('userBalance').innerText = "R$ " + (data.saldo || "0,00");
-                  document.getElementById('vipLevel').innerText = "ELITE VIP " + (data.vipLevel || "1");
-              }
-          } else {
-              window.location.href = "index.html";
-          }
-      });
-
-      window.claimTask = (taskName, reward) => {
-          Toast.fire({
-            icon: 'info',
-            title: 'Validando Requisitos',
-            text: `Aguarde a análise do bônus de R$ ${reward},00...`,
-            iconColor: '#ffbc0d'
-          });
-      };
+      const analytics = getAnalytics(app);
     </script>
 
     <style>
         :root {
             --mcd-red: #db0007;
-            --mcd-gold: #ffbc0d;
-            --dark-bg: #0c0c0c;
-            --card-bg: #161616;
-            --glass: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.08);
+            --mcd-yellow: #ffbc0d;
+            --pure-white: #ffffff !important;
+            --text-main: #1d1d1f;
+            --text-muted: #86868b;
+            --light-bg: #f5f5f7;
         }
 
         * {
             margin: 0; padding: 0; box-sizing: border-box;
+            background-color: transparent;
             font-family: 'Montserrat', sans-serif;
-            outline: none !important;
             -webkit-tap-highlight-color: transparent;
         }
 
-        body {
-            background-color: var(--dark-bg);
-            color: #ffffff;
-            padding-bottom: 120px;
+        html, body {
+            background-color: var(--light-bg) !important;
+            color: var(--text-main);
             overflow-x: hidden;
+            width: 100%;
         }
 
-        /* Hero Header Premium */
-        .vip-header {
-            background: linear-gradient(180deg, var(--mcd-red) 0%, #000 100%);
-            padding: 60px 25px 80px;
+        body { padding-bottom: 120px; }
+
+        .vip-banner {
+            width: 100%;
+            height: 220px;
+            background: linear-gradient(180deg, var(--mcd-red) 0%, #a80005 100%);
+            border-bottom-left-radius: 45px;
+            border-bottom-right-radius: 45px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
             text-align: center;
-            border-bottom-left-radius: 40px;
-            border-bottom-right-radius: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
 
-        .vip-header h1 {
-            font-weight: 900;
-            font-size: 28px;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
+        .vip-banner h1 { font-size: 26px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+        .vip-banner p { font-size: 14px; font-weight: 600; opacity: 0.9; margin-top: 5px; }
 
-        .vip-badge {
-            display: inline-block;
-            background: rgba(255, 188, 13, 0.15);
-            border: 1px solid var(--mcd-gold);
-            color: var(--mcd-gold);
-            padding: 5px 15px;
-            border-radius: 50px;
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 1px;
-        }
-
-        /* Card de Saldo Glassmorphism */
-        .balance-card {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            margin: -40px 20px 0;
+        .balance-box {
+            background: var(--pure-white) !important;
+            margin: -40px 20px 25px;
             padding: 25px;
-            border-radius: 30px;
-            border: 1px solid var(--border);
+            border-radius: 28px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.06);
             text-align: center;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            position: relative;
+            z-index: 100;
         }
 
-        .balance-card span { font-size: 11px; color: #888; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; }
-        .balance-card h2 { font-size: 32px; font-weight: 900; margin-top: 5px; color: var(--mcd-gold); }
+        .balance-box span { font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; }
+        .balance-box h2 { font-size: 30px; font-weight: 800; color: var(--text-main); margin-top: 5px; }
 
         .container { padding: 0 20px; }
 
-        .section-title {
-            font-size: 12px;
-            font-weight: 900;
-            color: var(--mcd-gold);
-            margin: 40px 10px 20px;
+        .section-header {
+            font-size: 13px;
+            font-weight: 800;
+            color: var(--mcd-red);
+            margin: 30px 5px 15px;
             text-transform: uppercase;
-            letter-spacing: 2px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .section-title::after {
-            content: "";
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(90deg, var(--mcd-gold), transparent);
-        }
-
-        /* Task Cards Elite */
-        .task-list { display: flex; flex-direction: column; gap: 15px; }
-
         .task-card {
-            background: var(--card-bg);
+            background: var(--pure-white) !important;
             border-radius: 25px;
             padding: 20px;
-            border: 1px solid var(--border);
-            position: relative;
-            overflow: hidden;
-            transition: 0.3s;
+            margin-bottom: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.02);
         }
 
-        .task-card:active { transform: scale(0.97); }
-
-        .task-main { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
-
+        .task-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        
         .task-info { display: flex; align-items: center; gap: 15px; }
-
         .task-icon {
-            width: 50px; height: 50px;
-            background: rgba(219, 0, 7, 0.1);
+            width: 45px; height: 45px;
+            background: #fff3f3 !important;
             border-radius: 15px;
             display: flex; align-items: center; justify-content: center;
-            color: var(--mcd-red); font-size: 20px;
-            border: 1px solid rgba(219, 0, 7, 0.2);
+            color: var(--mcd-red); font-size: 18px;
         }
 
-        .task-details h4 { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 3px; }
-        .task-details p { font-size: 11px; color: #777; font-weight: 600; line-height: 1.3; }
+        .task-text h4 { font-size: 14px; font-weight: 800; color: #1a1a1b; }
+        .task-text p { font-size: 11px; color: var(--text-muted); font-weight: 600; }
 
-        .reward-tag {
-            background: rgba(39, 174, 96, 0.1);
-            color: #27ae60;
+        .reward {
+            background: #e8f5e9 !important;
+            color: #2e7d32;
             padding: 6px 12px;
             border-radius: 10px;
             font-size: 12px;
-            font-weight: 900;
+            font-weight: 800;
         }
 
-        /* Barra de Progresso Profissional */
-        .progress-wrapper { width: 100%; margin-bottom: 15px; }
-        .progress-bar {
-            width: 100%; height: 6px;
-            background: #222;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--mcd-red), #ff4d4d);
-            border-radius: 10px;
-        }
+        .progress-container { width: 100%; height: 6px; background: #eee !important; border-radius: 10px; margin-bottom: 15px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--mcd-red) !important; border-radius: 10px; }
 
         .btn-claim {
+            display: block;
             width: 100%;
-            background: var(--mcd-red);
-            color: white;
-            border: none;
-            padding: 14px;
+            background: var(--mcd-red) !important;
+            color: white !important;
+            text-align: center;
+            padding: 12px;
             border-radius: 15px;
-            font-size: 12px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 10px 20px rgba(219, 0, 7, 0.2);
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 13px;
+            transition: 0.3s;
         }
 
-        /* Tab Bar Flutuante Estilo iOS */
-        .tab-bar {
+        /* Tab Bar Original */
+        .bottom-nav {
             position: fixed;
             bottom: 25px; left: 20px; right: 20px;
-            height: 75px;
-            background: rgba(18, 18, 18, 0.8);
+            height: 80px;
+            background: rgba(255, 255, 255, 0.98) !important;
             backdrop-filter: blur(20px);
             display: flex; justify-content: space-around; align-items: center;
             border-radius: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.12);
             z-index: 1000;
-            border: 1px solid var(--border);
+            border: 1px solid rgba(255,255,255,0.4);
         }
 
-        .tab-link { text-align: center; text-decoration: none; color: #555; transition: 0.3s; position: relative; }
+        .tab-link { text-align: center; text-decoration: none; color: #bbb; transition: 0.3s; }
         .tab-link.active { color: var(--mcd-red); }
-        .tab-link i { font-size: 20px; margin-bottom: 5px; display: block; }
-        .tab-link span { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        .tab-link.active::after {
-            content: "";
-            position: absolute; bottom: -10px; left: 50%;
-            transform: translateX(-50%);
-            width: 4px; height: 4px; background: var(--mcd-red); border-radius: 50%;
-        }
+        .tab-link i { font-size: 24px; margin-bottom: 6px; display: block; }
+        .tab-link span { font-size: 10px; font-weight: 700; text-transform: uppercase; }
 
     </style>
 </head>
 <body>
 
-    <header class="vip-header">
-        <div class="vip-badge" id="vipLevel">ELITE VIP 1</div>
+    <div class="vip-banner">
         <h1>Missões VIP</h1>
-    </header>
+        <p>Complete desafios e ganhe bônus</p>
+    </div>
 
-    <div class="balance-card">
+    <div class="balance-box">
         <span>Bônus Acumulado</span>
-        <h2 id="userBalance">R$ 0,00</h2>
+        <h2>R$ 0,00</h2>
     </div>
 
     <div class="container">
         
-        <div class="section-title">
-            <i class="fa-solid fa-crown"></i> Investimento Elite
+        <div class="section-header">Investimento Elite</div>
+
+        <div class="task-card">
+            <div class="task-top">
+                <div class="task-info">
+                    <div class="task-icon"><i class="fa-solid fa-cart-shopping"></i></div>
+                    <div class="task-text"><h4>Mestre de Planos I</h4><p>Compre 3 planos ativos</p></div>
+                </div>
+                <div class="reward">+ R$ 20</div>
+            </div>
+            <div class="progress-container"><div class="progress-bar" style="width: 0%;"></div></div>
+            <a href="#" class="btn-claim">Resgatar Bônus</a>
         </div>
 
-        <div class="task-list">
-            <div class="task-card">
-                <div class="task-main">
-                    <div class="task-info">
-                        <div class="task-icon"><i class="fa-solid fa-cart-shopping"></i></div>
-                        <div class="task-details">
-                            <h4>Mestre de Planos I</h4>
-                            <p>Compre 3 planos ativos</p>
-                        </div>
-                    </div>
-                    <div class="reward-tag">+R$ 20</div>
+        <div class="task-card">
+            <div class="task-top">
+                <div class="task-info">
+                    <div class="task-icon"><i class="fa-solid fa-wallet"></i></div>
+                    <div class="task-text"><h4>Investidor M2</h4><p>Adquira 1 plano McDonald's M2</p></div>
                 </div>
-                <div class="progress-wrapper">
-                    <div class="progress-bar"><div class="progress-fill" style="width: 30%;"></div></div>
-                </div>
-                <button class="btn-claim" onclick="claimTask('Mestre de Planos I', 20)">Resgatar Bônus</button>
+                <div class="reward">+ R$ 35</div>
             </div>
-
-            <div class="task-card">
-                <div class="task-main">
-                    <div class="task-info">
-                        <div class="task-icon"><i class="fa-solid fa-wallet"></i></div>
-                        <div class="task-details">
-                            <h4>Investidor M2</h4>
-                            <p>Adquira 1 plano McDonald's M2</p>
-                        </div>
-                    </div>
-                    <div class="reward-tag">+R$ 35</div>
-                </div>
-                <button class="btn-claim" onclick="claimTask('Investidor M2', 35)">Resgatar Bônus</button>
-            </div>
-
-            <div class="task-card">
-                <div class="task-main">
-                    <div class="task-info">
-                        <div class="task-icon"><i class="fa-solid fa-gem"></i></div>
-                        <div class="task-details">
-                            <h4>Mestre de Planos II</h4>
-                            <p>Compre 7 planos ativos</p>
-                        </div>
-                    </div>
-                    <div class="reward-tag">+R$ 80</div>
-                </div>
-                <div class="progress-wrapper">
-                    <div class="progress-bar"><div class="progress-fill" style="width: 10%;"></div></div>
-                </div>
-                <button class="btn-claim" onclick="claimTask('Mestre de Planos II', 80)">Resgatar Bônus</button>
-            </div>
+            <a href="#" class="btn-claim">Resgatar Bônus</a>
         </div>
 
-        <div class="section-title">
-            <i class="fa-solid fa-users"></i> Expansão de Rede
+        <div class="task-card">
+            <div class="task-top">
+                <div class="task-info">
+                    <div class="task-icon"><i class="fa-solid fa-gem"></i></div>
+                    <div class="task-text"><h4>Mestre de Planos II</h4><p>Compre 7 planos ativos</p></div>
+                </div>
+                <div class="reward">+ R$ 80</div>
+            </div>
+            <div class="progress-container"><div class="progress-bar" style="width: 0%;"></div></div>
+            <a href="#" class="btn-claim">Resgatar Bônus</a>
         </div>
 
-        <div class="task-list">
-            <div class="task-card">
-                <div class="task-main">
-                    <div class="task-info">
-                        <div class="task-icon"><i class="fa-solid fa-user-plus"></i></div>
-                        <div class="task-details">
-                            <h4>Recrutador Bronze</h4>
-                            <p>20 Convites (4 Investidores)</p>
-                        </div>
-                    </div>
-                    <div class="reward-tag">+R$ 15</div>
-                </div>
-                <button class="btn-claim" onclick="claimTask('Recrutador Bronze', 15)">Resgatar Bônus</button>
-            </div>
+        <div class="section-header">Expansão de Rede</div>
 
-            <div class="task-card">
-                <div class="task-main">
-                    <div class="task-info">
-                        <div class="task-icon"><i class="fa-solid fa-medal"></i></div>
-                        <div class="task-details">
-                            <h4>Recrutador Prata</h4>
-                            <p>50 Convites (10 Investidores)</p>
-                        </div>
-                    </div>
-                    <div class="reward-tag">+R$ 50</div>
+        <div class="task-card">
+            <div class="task-top">
+                <div class="task-info">
+                    <div class="task-icon"><i class="fa-solid fa-user-plus"></i></div>
+                    <div class="task-text"><h4>Recrutador Bronze</h4><p>20 Convites (4 Investidores)</p></div>
                 </div>
-                <button class="btn-claim" onclick="claimTask('Recrutador Prata', 50)">Resgatar Bônus</button>
+                <div class="reward">+ R$ 15</div>
             </div>
+            <a href="#" class="btn-claim">Resgatar Bônus</a>
+        </div>
 
-            <div class="task-card">
-                <div class="task-main">
-                    <div class="task-info">
-                        <div class="task-icon"><i class="fa-solid fa-star"></i></div>
-                        <div class="task-details">
-                            <h4>Recrutador Ouro</h4>
-                            <p>100 Convites (25 Investidores)</p>
-                        </div>
-                    </div>
-                    <div class="reward-tag">+R$ 250</div>
+        <div class="task-card">
+            <div class="task-top">
+                <div class="task-info">
+                    <div class="task-icon"><i class="fa-solid fa-medal"></i></div>
+                    <div class="task-text"><h4>Recrutador Prata</h4><p>50 Convites (10 Investidores)</p></div>
                 </div>
-                <button class="btn-claim" onclick="claimTask('Recrutador Ouro', 250)">Resgatar Bônus</button>
+                <div class="reward">+ R$ 50</div>
             </div>
+            <a href="#" class="btn-claim">Resgatar Bônus</a>
+        </div>
 
-            <div class="task-card">
-                <div class="task-main">
-                    <div class="task-info">
-                        <div class="task-icon"><i class="fa-solid fa-handshake"></i></div>
-                        <div class="task-details">
-                            <h4>Líder de Equipe</h4>
-                            <p>Equipe atingir R$ 1.000 recargas</p>
-                        </div>
-                    </div>
-                    <div class="reward-tag">+R$ 100</div>
+        <div class="task-card">
+            <div class="task-top">
+                <div class="task-info">
+                    <div class="task-icon"><i class="fa-solid fa-star"></i></div>
+                    <div class="task-text"><h4>Recrutador Ouro</h4><p>100 Convites (25 Investidores)</p></div>
                 </div>
-                <button class="btn-claim" onclick="claimTask('Líder de Equipe', 100)">Resgatar Bônus</button>
+                <div class="reward">+ R$ 250</div>
             </div>
+            <a href="#" class="btn-claim">Resgatar Bônus</a>
+        </div>
 
-            <div class="task-card">
-                <div class="task-main">
-                    <div class="task-info">
-                        <div class="task-icon"><i class="fa-solid fa-rocket"></i></div>
-                        <div class="task-details">
-                            <h4>Influenciador VIP</h4>
-                            <p>5 Convidados N1 comprarem M2</p>
-                        </div>
-                    </div>
-                    <div class="reward-tag">+R$ 150</div>
+        <div class="task-card">
+            <div class="task-top">
+                <div class="task-info">
+                    <div class="task-icon"><i class="fa-solid fa-handshake"></i></div>
+                    <div class="task-text"><h4>Líder de Equipe</h4><p>Equipe atingir R$ 1.000 recargas</p></div>
                 </div>
-                <button class="btn-claim" onclick="claimTask('Influenciador VIP', 150)">Resgatar Bônus</button>
+                <div class="reward">+ R$ 100</div>
             </div>
+            <a href="#" class="btn-claim">Resgatar Bônus</a>
+        </div>
 
-            <div class="task-card">
-                <div class="task-info" style="margin-bottom: 15px;">
+        <div class="task-card">
+            <div class="task-top">
+                <div class="task-info">
+                    <div class="task-icon"><i class="fa-solid fa-rocket"></i></div>
+                    <div class="task-text"><h4>Influenciador VIP</h4><p>5 Convidados N1 comprarem M2</p></div>
+                </div>
+                <div class="reward">+ R$ 150</div>
+            </div>
+            <a href="#" class="btn-claim">Resgatar Bônus</a>
+        </div>
+
+        <div class="task-card">
+            <div class="task-top">
+                <div class="task-info">
                     <div class="task-icon"><i class="fa-solid fa-fire"></i></div>
-                    <div class="task-details">
-                        <h4>Soberano da Rede</h4>
-                        <p>Equipe atingir R$ 5.000 recargas</p>
-                    </div>
+                    <div class="task-text"><h4>Soberano da Rede</h4><p>Equipe atingir R$ 5.000 recargas</p></div>
                 </div>
-                <div class="reward-tag" style="margin-bottom: 15px; display: inline-block;">+R$ 600</div>
-                <button class="btn-claim" onclick="claimTask('Soberano da Rede', 600)">Resgatar Bônus</button>
+                <div class="reward">+ R$ 600</div>
             </div>
+            <a href="#" class="btn-claim">Resgatar Bônus</a>
+        </div>
 
-            <div class="task-card" style="border-color: var(--mcd-gold);">
-                <div class="task-info" style="margin-bottom: 15px;">
-                    <div class="task-icon" style="color: var(--mcd-gold);"><i class="fa-solid fa-crown"></i></div>
-                    <div class="task-details">
-                        <h4>Lenda McDonald's</h4>
-                        <p>Convidar 500 usuários totais</p>
-                    </div>
+        <div class="task-card" style="border: 1px solid var(--mcd-yellow);">
+            <div class="task-top">
+                <div class="task-info">
+                    <div class="task-icon" style="color: var(--mcd-yellow);"><i class="fa-solid fa-crown"></i></div>
+                    <div class="task-text"><h4>Lenda McDonald's</h4><p>Convidar 500 usuários totais</p></div>
                 </div>
-                <div class="reward-tag" style="background: rgba(255, 188, 13, 0.1); color: var(--mcd-gold); margin-bottom: 15px; display: inline-block;">+R$ 1.500</div>
-                <button class="btn-claim" style="background: var(--mcd-gold); color: #000;" onclick="claimTask('Lenda McDonald\'s', 1500)">Resgatar Recompensa Máxima</button>
+                <div class="reward" style="background: #fff9c4 !important; color: #f57f17;">+ R$ 1.500</div>
             </div>
+            <a href="#" class="btn-claim" style="background: var(--mcd-yellow) !important; color: #000 !important;">Resgatar Lenda</a>
         </div>
 
     </div>
 
-    <nav class="tab-bar">
+    <nav class="bottom-nav">
         <a href="home.html" class="tab-link">
             <i class="fa-solid fa-house-chimney"></i>
             <span>Início</span>
         </a>
         <a href="indicacao.html" class="tab-link">
-            <i class="fa-solid fa-users-viewfinder"></i>
+            <i class="fa-solid fa-share-nodes"></i>
             <span>Equipe</span>
         </a>
         <a href="vip.html" class="tab-link active">
-            <i class="fa-solid fa-gem"></i>
+            <i class="fa-solid fa-medal"></i>
             <span>VIP</span>
         </a>
         <a href="perfil.html" class="tab-link">
-            <i class="fa-solid fa-id-card-alt"></i>
+            <i class="fa-solid fa-user-gear"></i>
             <span>Perfil</span>
         </a>
     </nav>

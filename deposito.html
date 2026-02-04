@@ -32,9 +32,14 @@
           if (user) {
               const docRef = doc(db, "users", user.uid);
               const docSnap = await getDoc(docRef);
+              
+              // Atualiza o identificador do usuário (Telefone ou ID)
+              const displayId = user.email ? user.email.split('@')[0] : (user.phoneNumber || "USUÁRIO VIP");
+              document.getElementById('userPhone').innerText = displayId;
+
               if (docSnap.exists()) {
-                  document.getElementById('currentBalance').innerText = "R$ " + (docSnap.data().saldo || "0,00");
-                  document.getElementById('userPhone').innerText = user.email.split('@')[0];
+                  const saldo = docSnap.data().saldo;
+                  document.getElementById('currentBalance').innerText = "R$ " + (saldo !== undefined ? saldo : "0,00");
               }
           }
       });
@@ -110,8 +115,13 @@
             background: white; border-radius: 20px;
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+            overflow: hidden; /* Garante que a imagem não saia do limite */
         }
-        .avatar-circle img { width: 80%; }
+        .avatar-circle img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; /* Faz a imagem preencher todo o espaço */
+        }
 
         .balance-info span { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; font-weight: 700; }
         .balance-info h2 { font-size: 28px; font-weight: 900; letter-spacing: -1px; }
@@ -219,7 +229,7 @@
                 <img src="logoindicacao.jpg" alt="Logo">
             </div>
             <div class="balance-info">
-                <span id="userPhone">Aguarde...</span>
+                <span id="userPhone">Carregando...</span>
                 <h2 id="currentBalance">R$ 0,00</h2>
             </div>
         </div>

@@ -189,7 +189,7 @@
         .empty-state i { font-size: 60px; color: #ddd; margin-bottom: 20px; }
         .empty-state p { font-size: 14px; color: #999; font-weight: 600; }
 
-        /* Bottom Nav (Mesmo padrão das outras) */
+        /* Bottom Nav - Apenas Visual */
         .bottom-nav {
             position: fixed;
             bottom: 25px; left: 20px; right: 20px;
@@ -203,7 +203,7 @@
             border: 1px solid rgba(255,255,255,0.4);
         }
 
-        .tab-link { text-align: center; text-decoration: none; color: #bbb; }
+        .tab-link { text-align: center; text-decoration: none; color: #bbb; pointer-events: none; }
         .tab-link.active { color: var(--mcd-red); }
         .tab-link i { font-size: 22px; display: block; margin-bottom: 4px; }
         .tab-link span { font-size: 10px; font-weight: 700; text-transform: uppercase; }
@@ -249,22 +249,22 @@
     </main>
 
     <nav class="bottom-nav">
-        <a href="home.html" class="tab-link">
+        <div class="tab-link">
             <i class="fa-solid fa-house"></i>
             <span>Início</span>
-        </a>
-        <a href="equipe.html" class="tab-link">
+        </div>
+        <div class="tab-link">
             <i class="fa-solid fa-users"></i>
             <span>Equipe</span>
-        </a>
-        <a href="vip.html" class="tab-link">
+        </div>
+        <div class="tab-link">
             <i class="fa-solid fa-crown"></i>
             <span>VIP</span>
-        </a>
-        <a href="perfil.html" class="tab-link active">
+        </div>
+        <div class="tab-link active">
             <i class="fa-solid fa-user"></i>
             <span>Perfil</span>
-        </a>
+        </div>
     </nav>
 
 </body>

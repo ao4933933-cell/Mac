@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light">
+    <title>McDonald's Elite - Saque</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
+        authDomain: "mac09875.firebaseapp.com",
+        projectId: "mac09875",
+        storageBucket: "mac09875.firebasestorage.app",
+        messagingSenderId: "1036489448526",
+        appId: "1:1036489448526:web:aa40d000e12f21a6b0771f"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      let userSaldo = 0;
+
+      onAuthStateChanged(auth, async (user) => {
+          if (user) {
+              const docRef = doc(db, "users", user.uid);
+              const docSnap = await getDoc(docRef);
+              if (docSnap.exists()) {
+                  userSaldo = parseFloat(docSnap.data().saldo || 0);
+                  document.getElementById('displaySaldo').innerText = "R$ " + userSaldo.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+              }
+          } else {
+              window.location.href = "index.html";
+          }
+      });
+
+      // Cálculo de Imposto em tempo real
+      window.updateWithdrawInfo = () => {
+          const val = parseFloat(document.getElementById('withdrawInput').value) || 0;
+          const tax = val * 0.12;
+          const finalVal = val - tax;
+          document.getElementById('taxLabel').innerText = "Imposto (12%): R$ " + tax.toFixed(2);
+          document.getElementById('receivedLabel').innerText = "Você recebe: R$ " + (finalVal > 0 ? finalVal.toFixed(2) : "0.00");
+      };
+
+      window.processWithdraw = async () => {
+          const amount = parseFloat(document.getElementById('withdrawInput').value);
+          const pixKey = document.getElementById('pixKey').value;
+          const keyType = document.getElementById('keyType').value;
+
+          if (isNaN(amount) || amount < 20) {
+              Swal.fire({ icon: 'error', title: 'Valor Mínimo', text: 'O valor mínimo para saque é R$ 20,00', confirmButtonColor: '#db0007' });
+              return;
+          }
+
+          if (amount > userSaldo) {
+              Swal.fire({ icon: 'error', title: 'Saldo Insuficiente', text: 'Você não possui saldo suficiente para este saque.', confirmButtonColor: '#db0007' });
+              return;
+          }
+
+          if (!pixKey || pixKey.length < 5) {
+              Swal.fire({ icon: 'warning', title: 'Chave PIX', text: 'Por favor, insira uma chave PIX válida.', confirmButtonColor: '#db0007' });
+              return;
+          }
+
+          Swal.fire({
+            title: 'Processando Saque',
+            text: 'Aguarde a verificação do sistema...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+          });
+
+          try {
+              const user = auth.currentUser;
+              const userRef = doc(db, "users", user.uid);
+              
+              // Deduz o saldo no Firebase
+              await updateDoc(userRef, {
+                  saldo: increment(-amount)
+              });
+
+              Swal.fire({
+                icon: 'success',
+                title: 'Pedido Enviado!',
+                text: 'Seu saque será creditado em sua conta em até 2 horas.',
+                confirmButtonColor: '#db0007'
+              }).then(() => { window.location.reload(); });
+
+          } catch (error) {
+              Swal.fire({ icon: 'error', title: 'Erro', text: 'Falha ao processar saque. Tente novamente.' });
+          }
+      };
+    </script>
+
+    <style>
+        :root {
+            --mcd-red: #db0007;
+            --mcd-gold: #ffbc0d;
+            --pure-white: #ffffff;
+            --bg-light: #f5f5f7;
+            --text-dark: #1d1d1f;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+
+        body { background-color: var(--bg-light); color: var(--text-dark); min-height: 100vh; padding-bottom: 40px; }
+
+        /* Header Elite */
+        .header-withdraw {
+            background: linear-gradient(135deg, var(--mcd-red) 0%, #a50005 100%);
+            height: 240px;
+            padding: 40px 25px;
+            border-bottom-left-radius: 50px;
+            border-bottom-right-radius: 50px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(219, 0, 7, 0.2);
+        }
+
+        .top-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; }
+        .back-btn { width: 45px; height: 45px; background: rgba(255,255,255,0.2); border-radius: 15px; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; }
+
+        .balance-display { text-align: center; margin-top: 10px; }
+        .balance-display span { font-size: 12px; font-weight: 700; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
+        .balance-display h2 { font-size: 36px; font-weight: 900; }
+
+        /* Card de Saque */
+        .withdraw-card {
+            background: var(--pure-white);
+            width: 90%;
+            margin: -40px auto 30px;
+            border-radius: 35px;
+            padding: 30px 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+
+        .input-group { margin-bottom: 20px; }
+        .input-label { font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 10px; display: block; padding-left: 5px; }
+
+        .select-field, .input-field {
+            background: #f8f9fb;
+            border: 2px solid #f0f0f2;
+            border-radius: 20px;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: 0.3s;
+        }
+
+        .input-field:focus-within { border-color: var(--mcd-red); background: white; }
+        
+        select, input {
+            border: none; background: transparent; width: 100%;
+            font-size: 16px; font-weight: 700; color: var(--text-dark); outline: none;
+        }
+
+        .withdraw-info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 5px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        #taxLabel { color: #888; }
+        #receivedLabel { color: var(--mcd-red); }
+
+        .btn-withdraw {
+            width: 100%;
+            background: var(--mcd-red);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 22px;
+            font-size: 18px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 20px rgba(219, 0, 7, 0.25);
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        /* Regras */
+        .rules-container { width: 90%; margin: 0 auto; padding: 0 10px; }
+        .rules-title { font-size: 14px; font-weight: 900; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .rule-item { display: flex; gap: 12px; margin-bottom: 12px; font-size: 12px; color: #666; font-weight: 600; line-height: 1.4; }
+        .rule-number { color: var(--mcd-red); font-weight: 900; }
+
+    </style>
+</head>
+<body>
+
+    <header class="header-withdraw">
+        <div class="top-nav">
+            <a href="home.html" class="back-btn"><i class="fa-solid fa-chevron-left"></i></a>
+            <span style="font-weight: 800; font-size: 16px; letter-spacing: 1px;">SISTEMA DE SAQUE</span>
+            <div style="width: 45px;"></div>
+        </div>
+
+        <div class="balance-display">
+            <span>Saldo Disponível</span>
+            <h2 id="displaySaldo">R$ 0,00</h2>
+        </div>
+    </header>
+
+    <main class="withdraw-card">
+        <div class="input-group">
+            <label class="input-label">Tipo de Chave PIX</label>
+            <div class="select-field">
+                <i class="fa-solid fa-fingerprint" style="color: var(--mcd-red);"></i>
+                <select id="keyType">
+                    <option value="cpf">CPF</option>
+                    <option value="email">E-mail</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Sua Chave PIX</label>
+            <div class="input-field">
+                <i class="fa-brands fa-pix" style="color: #00bfa5;"></i>
+                <input type="text" id="pixKey" placeholder="Digite sua chave aqui">
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label class="input-label">Valor do Saque</label>
+            <div class="input-field">
+                <i class="fa-solid fa-brazilian-real-sign" style="color: var(--mcd-red);"></i>
+                <input type="number" id="withdrawInput" placeholder="Mínimo 20.00" oninput="updateWithdrawInfo()">
+            </div>
+        </div>
+
+        <div class="withdraw-info-row">
+            <span id="taxLabel">Imposto (12%): R$ 0.00</span>
+            <span id="receivedLabel">Você recebe: R$ 0.00</span>
+        </div>
+
+        <button class="btn-withdraw" onclick="processWithdraw()">Confirmar Saque</button>
+    </main>
+
+    <section class="rules-container">
+        <h4 class="rules-title"><i class="fa-solid fa-circle-info" style="color: var(--mcd-red);"></i> Regras de Saque</h4>
+        
+        <div class="rule-item">
+            <span class="rule-number">01.</span>
+            <p>O valor mínimo para realizar o saque é de R$ 20,00.</p>
+        </div>
+        <div class="rule-item">
+            <span class="rule-number">02.</span>
+            <p>Retiradas disponíveis todos os dias, das 10h às 17h.</p>
+        </div>
+        <div class="rule-item">
+            <span class="rule-number">03.</span>
+            <p>Taxa de processamento padrão de 12,0% aplicada a cada saque.</p>
+        </div>
+        <div class="rule-item">
+            <span class="rule-number">04.</span>
+            <p>Crédito em conta em até 2 horas (máximo 24h em feriados).</p>
+        </div>
+        <div class="rule-item">
+            <span class="rule-number">05.</span>
+            <p>Certifique-se de que a chave PIX informada está correta.</p>
+        </div>
+    </section>
+
+</body>
+</html>

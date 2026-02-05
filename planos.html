@@ -115,7 +115,7 @@
 
         body { background-color: var(--bg-light); color: var(--text-dark); min-height: 100vh; padding-bottom: 100px; }
 
-        /* Header Premium */
+        /* Header Premium - Correção de Z-index */
         .header-collection {
             background: linear-gradient(135deg, var(--mcd-red) 0%, #a50005 100%);
             height: 220px;
@@ -124,18 +124,21 @@
             border-bottom-right-radius: 50px;
             color: white;
             position: relative;
+            z-index: 1; /* Fica atrás dos cards */
         }
 
         .top-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
         .back-btn { width: 45px; height: 45px; background: rgba(255,255,255,0.2); border-radius: 15px; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; }
 
-        /* Dashboard de Resumo */
+        /* Dashboard de Resumo - Correção de Z-index e posicionamento */
         .summary-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 15px;
             width: 90%;
             margin: -60px auto 30px;
+            position: relative;
+            z-index: 10; /* Garante que os cards fiquem acima do banner vermelho */
         }
 
         .summary-item {

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light">
+    <title>McDonald's Elite - Minha Coleção</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
+        authDomain: "mac09875.firebaseapp.com",
+        projectId: "mac09875",
+        storageBucket: "mac09875.firebasestorage.app",
+        messagingSenderId: "1036489448526",
+        appId: "1:1036489448526:web:aa40d000e12f21a6b0771f"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      onAuthStateChanged(auth, async (user) => {
+          if (user) {
+              loadUserInvestments(user.uid);
+          } else {
+              window.location.href = "index.html";
+          }
+      });
+
+      async function loadUserInvestments(uid) {
+          const container = document.getElementById('investmentsList');
+          const emptyState = document.getElementById('emptyState');
+          let totalProfit = 0;
+          let count = 0;
+
+          try {
+              // Busca na coleção 'compras' onde o userId é igual ao logado
+              const q = query(collection(db, "compras"), where("userId", "==", uid));
+              const querySnapshot = await getDocs(q);
+
+              if (querySnapshot.empty) {
+                  emptyState.style.display = 'block';
+                  return;
+              }
+
+              emptyState.style.display = 'none';
+              container.innerHTML = '';
+
+              querySnapshot.forEach((doc) => {
+                  const data = doc.data();
+                  count++;
+                  totalProfit += parseFloat(data.lucroDiario || 0);
+
+                  const card = document.createElement('div');
+                  card.className = 'investment-card';
+                  card.innerHTML = `
+                      <div class="card-info">
+                          <div class="prod-icon">
+                              <i class="fa-solid fa-box-open"></i>
+                          </div>
+                          <div class="prod-details">
+                              <h4>${data.nomePlano || 'Plano McDonald\'s'}</h4>
+                              <span>Iniciado em: ${data.dataCompra || 'Recentemente'}</span>
+                          </div>
+                          <div class="status-tag">Ativo</div>
+                      </div>
+                      <div class="card-stats">
+                          <div class="stat">
+                              <span class="label">Renda Diária</span>
+                              <span class="value">R$ ${parseFloat(data.lucroDiario).toFixed(2)}</span>
+                          </div>
+                          <div class="stat">
+                              <span class="label">Total Bruto</span>
+                              <span class="value">R$ ${parseFloat(data.lucroTotal).toFixed(2)}</span>
+                          </div>
+                          <div class="stat">
+                              <span class="label">Ciclo</span>
+                              <span class="value">${data.ciclo || '60'} Dias</span>
+                          </div>
+                      </div>
+                      <div class="progress-container">
+                          <div class="progress-bar" style="width: 15%"></div>
+                      </div>
+                  `;
+                  container.appendChild(card);
+              });
+
+              document.getElementById('totalProducts').innerText = count;
+              document.getElementById('dailyIncome').innerText = "R$ " + totalProfit.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+          } catch (error) {
+              console.error("Erro ao carregar:", error);
+          }
+      }
+    </script>
+
+    <style>
+        :root {
+            --mcd-red: #db0007;
+            --mcd-gold: #ffbc0d;
+            --pure-white: #ffffff;
+            --bg-light: #f5f5f7;
+            --text-dark: #1d1d1f;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
+
+        body { background-color: var(--bg-light); color: var(--text-dark); min-height: 100vh; padding-bottom: 100px; }
+
+        /* Header Premium */
+        .header-collection {
+            background: linear-gradient(135deg, var(--mcd-red) 0%, #a50005 100%);
+            height: 220px;
+            padding: 40px 25px;
+            border-bottom-left-radius: 50px;
+            border-bottom-right-radius: 50px;
+            color: white;
+            position: relative;
+        }
+
+        .top-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
+        .back-btn { width: 45px; height: 45px; background: rgba(255,255,255,0.2); border-radius: 15px; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; }
+
+        /* Dashboard de Resumo */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 90%;
+            margin: -60px auto 30px;
+        }
+
+        .summary-item {
+            background: var(--pure-white);
+            padding: 20px;
+            border-radius: 28px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+
+        .summary-item i { width: 35px; height: 35px; background: #fff0f0; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: var(--mcd-red); margin-bottom: 12px; font-size: 14px; }
+        .summary-item i.gold { background: #fff9e6; color: var(--mcd-gold); }
+        .summary-item .label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; margin-bottom: 4px; }
+        .summary-item .value { font-size: 18px; font-weight: 900; color: var(--text-dark); }
+
+        /* Lista de Investimentos */
+        .content-section { padding: 0 20px; }
+        .section-title { font-size: 16px; font-weight: 800; margin-bottom: 20px; color: #333; display: flex; align-items: center; gap: 10px; }
+
+        .investment-card {
+            background: var(--pure-white);
+            border-radius: 30px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+            border: 1px solid #f0f0f2;
+        }
+
+        .card-info { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; position: relative; }
+        .prod-icon { width: 50px; height: 50px; background: #f8f9fb; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: var(--mcd-red); font-size: 20px; border: 1px solid #eee; }
+        .prod-details h4 { font-size: 15px; font-weight: 800; color: #1a1a1b; }
+        .prod-details span { font-size: 11px; color: #aaa; font-weight: 600; }
+        
+        .status-tag { position: absolute; right: 0; top: 5px; background: #e6fff0; color: #27ae60; font-size: 10px; font-weight: 800; padding: 4px 12px; border-radius: 50px; text-transform: uppercase; }
+
+        .card-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .stat { display: flex; flex-direction: column; }
+        .stat .label { font-size: 9px; font-weight: 700; color: #bbb; text-transform: uppercase; margin-bottom: 3px; }
+        .stat .value { font-size: 13px; font-weight: 800; color: #333; }
+
+        .progress-container { width: 100%; height: 6px; background: #f0f0f2; border-radius: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--mcd-red), var(--mcd-gold)); border-radius: 10px; }
+
+        /* Empty State */
+        .empty-state { text-align: center; padding: 60px 20px; display: none; }
+        .empty-state i { font-size: 60px; color: #ddd; margin-bottom: 20px; }
+        .empty-state p { font-size: 14px; color: #999; font-weight: 600; }
+
+        /* Bottom Nav (Mesmo padrão das outras) */
+        .bottom-nav {
+            position: fixed;
+            bottom: 25px; left: 20px; right: 20px;
+            height: 75px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            display: flex; justify-content: space-around; align-items: center;
+            border-radius: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            z-index: 1000;
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+
+        .tab-link { text-align: center; text-decoration: none; color: #bbb; }
+        .tab-link.active { color: var(--mcd-red); }
+        .tab-link i { font-size: 22px; display: block; margin-bottom: 4px; }
+        .tab-link span { font-size: 10px; font-weight: 700; text-transform: uppercase; }
+
+    </style>
+</head>
+<body>
+
+    <header class="header-collection">
+        <div class="top-nav">
+            <a href="home.html" class="back-btn"><i class="fa-solid fa-chevron-left"></i></a>
+            <span style="font-weight: 800; font-size: 16px; letter-spacing: 1px;">MINHA COLEÇÃO</span>
+            <div style="width: 45px;"></div>
+        </div>
+    </header>
+
+    <div class="summary-grid">
+        <div class="summary-item">
+            <i class="fa-solid fa-layer-group"></i>
+            <span class="label">Total de Planos</span>
+            <span class="value" id="totalProducts">0</span>
+        </div>
+        <div class="summary-item">
+            <i class="fa-solid fa-chart-line gold"></i>
+            <span class="label">Renda Diária</span>
+            <span class="value" id="dailyIncome">R$ 0,00</span>
+        </div>
+    </div>
+
+    <main class="content-section">
+        <h4 class="section-title">
+            <i class="fa-solid fa-boxes-stacked" style="color: var(--mcd-red);"></i> 
+            Produtos Adquiridos
+        </h4>
+
+        <div id="investmentsList">
+            </div>
+
+        <div id="emptyState" class="empty-state">
+            <i class="fa-solid fa-box-open"></i>
+            <p>Você ainda não possui produtos em sua coleção.</p>
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="home.html" class="tab-link">
+            <i class="fa-solid fa-house"></i>
+            <span>Início</span>
+        </a>
+        <a href="equipe.html" class="tab-link">
+            <i class="fa-solid fa-users"></i>
+            <span>Equipe</span>
+        </a>
+        <a href="vip.html" class="tab-link">
+            <i class="fa-solid fa-crown"></i>
+            <span>VIP</span>
+        </a>
+        <a href="perfil.html" class="tab-link active">
+            <i class="fa-solid fa-user"></i>
+            <span>Perfil</span>
+        </a>
+    </nav>
+
+</body>
+</html>

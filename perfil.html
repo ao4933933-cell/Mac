@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light">
+    <title>McDonald's Elite - Perfil</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
+        authDomain: "mac09875.firebaseapp.com",
+        projectId: "mac09875",
+        storageBucket: "mac09875.firebasestorage.app",
+        messagingSenderId: "1036489448526",
+        appId: "1:1036489448526:web:aa40d000e12f21a6b0771f"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      onAuthStateChanged(auth, async (user) => {
+          if (user) {
+              const displayId = user.email ? user.email.split('@')[0] : "Usuário VIP";
+              document.getElementById('userEmail').innerText = displayId;
+              document.getElementById('userId').innerText = "ID: " + user.uid.substring(0, 8).toUpperCase();
+              
+              const docRef = doc(db, "users", user.uid);
+              const docSnap = await getDoc(docRef);
+              if (docSnap.exists()) {
+                  const data = docSnap.data();
+                  document.getElementById('balance').innerText = "R$ " + (data.saldo || "0,00");
+                  document.getElementById('recharge').innerText = "R$ " + (data.recarga || "0,00");
+                  document.getElementById('profit').innerText = "R$ " + (data.lucro || "0,00");
+              }
+          } else {
+              window.location.href = "index.html";
+          }
+      });
+    </script>
+
+    <style>
+        :root {
+            --mcd-red: #db0007;
+            --mcd-gold: #ffbc0d;
+            --pure-white: #ffffff;
+            --bg-light: #f5f5f7;
+            --text-dark: #1d1d1f;
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            padding-bottom: 120px;
+        }
+
+        /* Header Premium */
+        .header-profile {
+            background: linear-gradient(135deg, var(--mcd-red) 0%, #a50005 100%);
+            height: 280px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-bottom-left-radius: 60px;
+            border-bottom-right-radius: 60px;
+            color: white;
+            box-shadow: 0 15px 35px rgba(219, 0, 7, 0.2);
+        }
+
+        .avatar-wrapper {
+            width: 100px; height: 100px;
+            background: white; border-radius: 35px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border: 4px solid rgba(255,255,255,0.2);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .avatar-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+
+        .user-name { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; }
+        .user-id-tag { 
+            background: rgba(0,0,0,0.2); 
+            padding: 5px 15px; border-radius: 50px; 
+            font-size: 11px; font-weight: 700; 
+            margin-top: 8px; border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Dashboard de Finanças */
+        .finance-card {
+            background: var(--pure-white);
+            width: 90%;
+            margin: -60px auto 30px;
+            border-radius: 35px;
+            padding: 25px 10px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .finance-item h3 { font-size: 16px; font-weight: 900; color: var(--mcd-red); margin-bottom: 5px; }
+        .finance-item span { font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; }
+        .divider { width: 1px; height: 40px; background: #f0f0f0; align-self: center; }
+
+        /* Menu de Opções */
+        .menu-container {
+            width: 90%;
+            margin: 0 auto;
+            background: var(--pure-white);
+            border-radius: 35px;
+            padding: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        }
+
+        .menu-link {
+            display: flex;
+            align-items: center;
+            padding: 18px 20px;
+            text-decoration: none;
+            color: var(--text-dark);
+            transition: 0.2s;
+            border-radius: 25px;
+        }
+
+        .menu-link:active { background: #fff5f5; }
+
+        .icon-box {
+            width: 45px; height: 45px;
+            background: #fdf2f2;
+            border-radius: 15px;
+            display: flex; align-items: center; justify-content: center;
+            margin-right: 15px;
+            color: var(--mcd-red);
+            font-size: 18px;
+        }
+
+        .link-text { flex: 1; font-weight: 700; font-size: 14px; }
+        .chevron { color: #ddd; font-size: 12px; }
+
+        /* Tab Bar Navegação */
+        .bottom-nav {
+            position: fixed;
+            bottom: 25px; left: 20px; right: 20px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            display: flex; justify-content: space-around; align-items: center;
+            border-radius: 30px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+            z-index: 1000;
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+
+        .tab-link { text-align: center; text-decoration: none; color: #bbb; transition: 0.3s; }
+        .tab-link.active { color: var(--mcd-red); }
+        .tab-link i { font-size: 24px; margin-bottom: 6px; display: block; }
+        .tab-link span { font-size: 10px; font-weight: 700; text-transform: uppercase; }
+
+    </style>
+</head>
+<body>
+
+    <div class="header-profile">
+        <div class="avatar-wrapper">
+            <img src="logoindicacao.jpg" alt="Logo">
+        </div>
+        <h2 class="user-name" id="userEmail">Usuário Elite</h2>
+        <div class="user-id-tag" id="userId">ID: --------</div>
+    </div>
+
+    <div class="finance-card">
+        <div class="finance-item">
+            <h3 id="balance">R$ 0,00</h3>
+            <span>Saldo</span>
+        </div>
+        <div class="divider"></div>
+        <div class="finance-item">
+            <h3 id="recharge">R$ 0,00</h3>
+            <span>Recargas</span>
+        </div>
+        <div class="divider"></div>
+        <div class="finance-item">
+            <h3 id="profit">R$ 0,00</h3>
+            <span>Lucro</span>
+        </div>
+    </div>
+
+    <div class="menu-container">
+        <a href="#" class="menu-link">
+            <div class="icon-box"><i class="fa-solid fa-building-columns"></i></div>
+            <div class="link-text">Dados Bancários</div>
+            <i class="fa-solid fa-chevron-right chevron"></i>
+        </a>
+        <a href="#" class="menu-link">
+            <div class="icon-box"><i class="fa-solid fa-list-check"></i></div>
+            <div class="link-text">Histórico Financeiro</div>
+            <i class="fa-solid fa-chevron-right chevron"></i>
+        </a>
+        <a href="#" class="menu-link">
+            <div class="icon-box"><i class="fa-solid fa-headset"></i></div>
+            <div class="link-text">Suporte Online</div>
+            <i class="fa-solid fa-chevron-right chevron"></i>
+        </a>
+        <a href="#" class="menu-link">
+            <div class="icon-box"><i class="fa-solid fa-ticket"></i></div>
+            <div class="link-text">Meus Cupons</div>
+            <i class="fa-solid fa-chevron-right chevron"></i>
+        </a>
+        <a href="#" class="menu-link" style="color: var(--mcd-red);">
+            <div class="icon-box" style="background: #fff0f0;"><i class="fa-solid fa-right-from-bracket"></i></div>
+            <div class="link-text">Sair da Conta</div>
+        </a>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="home.html" class="tab-link">
+            <i class="fa-solid fa-house-chimney"></i>
+            <span>Início</span>
+        </a>
+        <a href="indicacao.html" class="tab-link">
+            <i class="fa-solid fa-share-nodes"></i>
+            <span>Equipe</span>
+        </a>
+        <a href="vip.html" class="tab-link">
+            <i class="fa-solid fa-medal"></i>
+            <span>VIP</span>
+        </a>
+        <a href="#" class="tab-link active">
+            <i class="fa-solid fa-user-gear"></i>
+            <span>Perfil</span>
+        </a>
+    </nav>
+
+</body>
+</html>

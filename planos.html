@@ -113,7 +113,7 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
 
-        body { background-color: var(--bg-light); color: var(--text-dark); min-height: 100vh; padding-bottom: 100px; }
+        body { background-color: var(--bg-light); color: var(--text-dark); min-height: 100vh; padding-bottom: 30px; }
 
         /* Header Premium - Correção de Z-index */
         .header-collection {
@@ -189,25 +189,6 @@
         .empty-state i { font-size: 60px; color: #ddd; margin-bottom: 20px; }
         .empty-state p { font-size: 14px; color: #999; font-weight: 600; }
 
-        /* Bottom Nav - Apenas Visual */
-        .bottom-nav {
-            position: fixed;
-            bottom: 25px; left: 20px; right: 20px;
-            height: 75px;
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(15px);
-            display: flex; justify-content: space-around; align-items: center;
-            border-radius: 25px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            z-index: 1000;
-            border: 1px solid rgba(255,255,255,0.4);
-        }
-
-        .tab-link { text-align: center; text-decoration: none; color: #bbb; pointer-events: none; }
-        .tab-link.active { color: var(--mcd-red); }
-        .tab-link i { font-size: 22px; display: block; margin-bottom: 4px; }
-        .tab-link span { font-size: 10px; font-weight: 700; text-transform: uppercase; }
-
     </style>
 </head>
 <body>
@@ -247,25 +228,6 @@
             <p>Você ainda não possui produtos em sua coleção.</p>
         </div>
     </main>
-
-    <nav class="bottom-nav">
-        <div class="tab-link">
-            <i class="fa-solid fa-house"></i>
-            <span>Início</span>
-        </div>
-        <div class="tab-link">
-            <i class="fa-solid fa-users"></i>
-            <span>Equipe</span>
-        </div>
-        <div class="tab-link">
-            <i class="fa-solid fa-crown"></i>
-            <span>VIP</span>
-        </div>
-        <div class="tab-link active">
-            <i class="fa-solid fa-user"></i>
-            <span>Perfil</span>
-        </div>
-    </nav>
 
 </body>
 </html>

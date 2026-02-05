@@ -29,6 +29,7 @@
       const db = getFirestore(app);
 
       let userSaldo = 0;
+      let selectedKeyType = 'cpf'; // Valor padrão
 
       onAuthStateChanged(auth, async (user) => {
           if (user) {
@@ -43,6 +44,20 @@
           }
       });
 
+      // Função para trocar o tipo de chave visualmente
+      window.setKeyType = (type) => {
+          selectedKeyType = type;
+          document.querySelectorAll('.type-option').forEach(opt => opt.classList.remove('active'));
+          document.querySelector(`.type-option.${type}`).classList.add('active');
+          
+          const input = document.getElementById('pixKey');
+          if(type === 'cpf') {
+              input.placeholder = "000.000.000-00";
+          } else {
+              input.placeholder = "exemplo@email.com";
+          }
+      };
+
       // Cálculo de Imposto em tempo real
       window.updateWithdrawInfo = () => {
           const val = parseFloat(document.getElementById('withdrawInput').value) || 0;
@@ -55,7 +70,6 @@
       window.processWithdraw = async () => {
           const amount = parseFloat(document.getElementById('withdrawInput').value);
           const pixKey = document.getElementById('pixKey').value;
-          const keyType = document.getElementById('keyType').value;
 
           if (isNaN(amount) || amount < 20) {
               Swal.fire({ icon: 'error', title: 'Valor Mínimo', text: 'O valor mínimo para saque é R$ 20,00', confirmButtonColor: '#db0007' });
@@ -83,7 +97,6 @@
               const user = auth.currentUser;
               const userRef = doc(db, "users", user.uid);
               
-              // Deduz o saldo no Firebase
               await updateDoc(userRef, {
                   saldo: increment(-amount)
               });
@@ -110,11 +123,10 @@
             --text-dark: #1d1d1f;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
 
         body { background-color: var(--bg-light); color: var(--text-dark); min-height: 100vh; padding-bottom: 40px; }
 
-        /* Header Elite */
         .header-withdraw {
             background: linear-gradient(135deg, var(--mcd-red) 0%, #a50005 100%);
             height: 240px;
@@ -132,10 +144,9 @@
         .balance-display span { font-size: 12px; font-weight: 700; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
         .balance-display h2 { font-size: 36px; font-weight: 900; }
 
-        /* Card de Saque */
         .withdraw-card {
             background: var(--pure-white);
-            width: 90%;
+            width: 92%;
             margin: -40px auto 30px;
             border-radius: 35px;
             padding: 30px 20px;
@@ -143,23 +154,55 @@
             border: 1px solid rgba(255,255,255,0.8);
         }
 
-        .input-group { margin-bottom: 20px; }
-        .input-label { font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 10px; display: block; padding-left: 5px; }
+        .input-group { margin-bottom: 22px; }
+        .input-label { font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 12px; display: block; padding-left: 5px; }
 
-        .select-field, .input-field {
+        /* Estilo Elite para os Seletores de Chave */
+        .key-type-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .type-option {
+            background: #f8f9fb;
+            border: 2px solid #f0f0f2;
+            padding: 15px;
+            border-radius: 20px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: #666;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .type-option.active {
+            border-color: var(--mcd-red);
+            background: #fff0f0;
+            color: var(--mcd-red);
+            box-shadow: 0 4px 12px rgba(219, 0, 7, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .input-field {
             background: #f8f9fb;
             border: 2px solid #f0f0f2;
             border-radius: 20px;
-            padding: 15px 20px;
+            padding: 18px 20px;
             display: flex;
             align-items: center;
             gap: 15px;
             transition: 0.3s;
         }
 
-        .input-field:focus-within { border-color: var(--mcd-red); background: white; }
+        .input-field:focus-within { border-color: var(--mcd-red); background: white; box-shadow: 0 5px 15px rgba(0,0,0,0.03); }
         
-        select, input {
+        input {
             border: none; background: transparent; width: 100%;
             font-size: 16px; font-weight: 700; color: var(--text-dark); outline: none;
         }
@@ -179,18 +222,20 @@
             background: var(--mcd-red);
             color: white;
             border: none;
-            padding: 20px;
-            border-radius: 22px;
+            padding: 22px;
+            border-radius: 25px;
             font-size: 18px;
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 1px;
-            box-shadow: 0 10px 20px rgba(219, 0, 7, 0.25);
+            box-shadow: 0 10px 25px rgba(219, 0, 7, 0.3);
             margin-top: 10px;
             cursor: pointer;
+            transition: 0.2s;
         }
 
-        /* Regras */
+        .btn-withdraw:active { transform: scale(0.97); }
+
         .rules-container { width: 90%; margin: 0 auto; padding: 0 10px; }
         .rules-title { font-size: 14px; font-weight: 900; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
         .rule-item { display: flex; gap: 12px; margin-bottom: 12px; font-size: 12px; color: #666; font-weight: 600; line-height: 1.4; }
@@ -216,12 +261,13 @@
     <main class="withdraw-card">
         <div class="input-group">
             <label class="input-label">Tipo de Chave PIX</label>
-            <div class="select-field">
-                <i class="fa-solid fa-fingerprint" style="color: var(--mcd-red);"></i>
-                <select id="keyType">
-                    <option value="cpf">CPF</option>
-                    <option value="email">E-mail</option>
-                </select>
+            <div class="key-type-selector">
+                <div class="type-option cpf active" onclick="setKeyType('cpf')">
+                    <i class="fa-solid fa-id-card"></i> CPF
+                </div>
+                <div class="type-option email" onclick="setKeyType('email')">
+                    <i class="fa-solid fa-envelope"></i> E-mail
+                </div>
             </div>
         </div>
 
@@ -229,7 +275,7 @@
             <label class="input-label">Sua Chave PIX</label>
             <div class="input-field">
                 <i class="fa-brands fa-pix" style="color: #00bfa5;"></i>
-                <input type="text" id="pixKey" placeholder="Digite sua chave aqui">
+                <input type="text" id="pixKey" placeholder="000.000.000-00">
             </div>
         </div>
 

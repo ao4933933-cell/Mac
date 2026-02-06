@@ -63,11 +63,29 @@
                   checkinCount: increment(1)
               }, { merge: true });
 
+              // Alerta Premium Customizado
               Swal.fire({
-                  title: 'Parabéns!',
-                  text: `Você recebeu R$ ${reward} de bônus diário!`,
+                  title: '<span style="color: #1d1d1f; font-weight: 900;">SUCESSO!</span>',
+                  html: `<div style="padding: 10px 0;">
+                            <p style="color: #8e8e93; font-weight: 600; font-size: 14px; margin-bottom: 15px;">Você resgatou sua recompensa diária</p>
+                            <h2 style="color: #27ae60; font-weight: 900; font-size: 28px;">+ R$ ${reward}</h2>
+                         </div>`,
                   icon: 'success',
-                  confirmButtonColor: '#db0007'
+                  iconColor: '#27ae60',
+                  background: '#ffffff',
+                  confirmButtonText: 'EXCELENTE',
+                  confirmButtonColor: '#db0007',
+                  buttonsStyling: true,
+                  customClass: {
+                      popup: 'premium-popup',
+                      confirmButton: 'premium-button'
+                  },
+                  showClass: {
+                      popup: 'animate__animated animate__fadeInUp animate__faster'
+                  },
+                  hideClass: {
+                      popup: 'animate__animated animate__fadeOutDown animate__faster'
+                  }
               });
 
               renderCalendar(data.checkinCount + 1 || 1);
@@ -110,6 +128,20 @@
             --bg-light: #f5f5f7;
             --text-dark: #1d1d1f;
             --text-muted: #8e8e93;
+        }
+
+        /* Estilos Extras para o Alerta Premium */
+        .premium-popup {
+            border-radius: 35px !important;
+            padding: 20px !important;
+            font-family: 'Montserrat', sans-serif !important;
+        }
+        .premium-button {
+            border-radius: 20px !important;
+            padding: 15px 40px !important;
+            font-weight: 800 !important;
+            font-size: 14px !important;
+            letter-spacing: 1px !important;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }

@@ -14,7 +14,7 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
       import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-      import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
@@ -29,7 +29,6 @@
       const auth = getAuth(app);
       const db = getFirestore(app);
 
-      // Configuração Global do SweetAlert Premium (Toast)
       const Toast = Swal.mixin({
         toast: true,
         position: 'top',
@@ -44,6 +43,65 @@
         }
       });
 
+      // Função para carregar membros e calcular comissões
+      async function loadTeamData(userId, shortId) {
+          const usersRef = collection(db, "users");
+          let totalComissaoLucro = 0;
+          let totalMembros = 0;
+          let totalRecargaEquipe = 0;
+
+          try {
+              // Nível 1 (10%) - Membros indicados diretamente pelo seu ShortID
+              const q1 = query(usersRef, where("refBy", "==", shortId));
+              const snap1 = await getDocs(q1);
+              const membrosNivel1 = [];
+              
+              snap1.forEach(doc => {
+                  const d = doc.data();
+                  const recarga = parseFloat(d.recarga || 0);
+                  totalComissaoLucro += recarga * 0.10;
+                  totalRecargaEquipe += recarga;
+                  totalMembros++;
+                  membrosNivel1.push({ email: d.email, valor: recarga });
+              });
+
+              // Lógica para Nível 2 (3%) e Nível 3 (1%) 
+              // Nota: Para sistemas complexos, isso exigiria salvar o ID do pai do pai. 
+              // Aqui exibimos o resumo baseado no que está no seu banco.
+              
+              document.getElementById('teamRecharge').innerText = "R$ " + totalRecargaEquipe.toFixed(2).replace('.', ',');
+              document.getElementById('teamSize').innerText = totalMembros;
+
+              // Atualiza o container da lista (Exemplo para Nível 1)
+              renderList(membrosNivel1);
+
+          } catch (error) {
+              console.error("Erro ao carregar equipe:", error);
+          }
+      }
+
+      function renderList(membros) {
+          const container = document.getElementById('listContainer');
+          if (membros.length === 0) {
+              container.innerHTML = `
+                  <div class="empty-icon"><i class="fa-solid fa-user-group"></i></div>
+                  <p>Nenhum membro encontrado neste nível.</p>
+              `;
+              return;
+          }
+
+          let html = '<div style="text-align: left; width: 100%;">';
+          membros.forEach(m => {
+              html += `
+                <div style="display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid #eee; font-size: 13px;">
+                    <span style="font-weight: 600; color: #555;">${m.email.split('@')[0]}...</span>
+                    <span style="color: var(--mcd-red); font-weight: 800;">Recarga: R$ ${m.valor.toFixed(2)}</span>
+                </div>`;
+          });
+          html += '</div>';
+          container.innerHTML = html;
+      }
+
       onAuthStateChanged(auth, async (user) => {
           if (user) {
               const shortId = user.uid.substring(0, 8).toUpperCase();
@@ -54,10 +112,9 @@
 
               const docRef = doc(db, "users", user.uid);
               const docSnap = await getDoc(docRef);
+              
               if (docSnap.exists()) {
-                  const data = docSnap.data();
-                  document.getElementById('teamRecharge').innerText = "R$ " + (data.recargaEquipe || "0,00");
-                  document.getElementById('teamSize').innerText = data.tamanhoEquipe || "0";
+                  loadTeamData(user.uid, shortId);
               }
           } else {
               window.location.href = "index.html";
@@ -70,7 +127,6 @@
           linkInput.setSelectionRange(0, 99999);
           navigator.clipboard.writeText(linkInput.value);
           
-          // Alerta Premium Minimalista
           Toast.fire({
             icon: 'success',
             title: 'Link copiado com sucesso!',
@@ -92,13 +148,12 @@
             --text-muted: #86868b;
         }
 
-        /* Reset e Remoção de bordas azuis */
         * {
             margin: 0; padding: 0; box-sizing: border-box;
             background-color: transparent;
             font-family: 'Montserrat', sans-serif;
-            outline: none !important; /* Remove bordas azuis em Chrome/Safari */
-            -webkit-tap-highlight-color: transparent; /* Remove flash azul no mobile */
+            outline: none !important;
+            -webkit-tap-highlight-color: transparent;
         }
 
         html, body {
@@ -109,7 +164,6 @@
 
         body { padding-bottom: 120px; }
 
-        /* Novo Topo Limpo (Invertido) */
         .header-bg {
             background: var(--mcd-red) !important;
             height: 140px;
@@ -122,12 +176,11 @@
 
         .container { 
             padding: 0 20px; 
-            margin-top: -80px; /* Sobe os cards para cima do vermelho */
+            margin-top: -80px;
             position: relative;
             z-index: 2;
         }
 
-        /* Card de Resumo (Agora com o Título integrado) */
         .team-summary-card {
             background: var(--pure-white) !important;
             border-radius: 30px;
@@ -168,7 +221,6 @@
         .summary-details h2 { font-size: 26px; font-weight: 800; color: #1a1a1b; margin: 2px 0; }
         .summary-details p { font-size: 13px; font-weight: 700; color: #555; }
 
-        /* Seção de Convite */
         .invite-box {
             background: var(--pure-white) !important;
             border-radius: 25px;
@@ -220,7 +272,6 @@
             font-weight: 800;
         }
 
-        /* Grid de Níveis */
         .levels-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -254,13 +305,17 @@
         }
         .active .active-dot { display: block; }
 
-        /* Lista Vazia Premium */
         .list-container {
             background: var(--pure-white) !important;
             border-radius: 30px;
-            padding: 60px 20px;
+            padding: 40px 20px;
             text-align: center;
             box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         .empty-icon { 
@@ -274,7 +329,6 @@
         }
         .list-container p { font-size: 14px; color: var(--text-muted); font-weight: 600; }
 
-        /* Tab Bar Flutuante Arredondada */
         .tab-bar {
             position: fixed;
             bottom: 25px; left: 20px; right: 20px;
@@ -293,7 +347,6 @@
         .tab-link i { font-size: 24px; margin-bottom: 6px; display: block; }
         .tab-link span { font-size: 10px; font-weight: 800; text-transform: uppercase; }
 
-        /* Customização SweetAlert para ser Premium */
         .swal2-popup.swal2-toast {
             border-radius: 20px !important;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important;
@@ -334,12 +387,12 @@
             <div class="level-item active" onclick="this.parentElement.querySelectorAll('.level-item').forEach(e=>e.classList.remove('active')); this.classList.add('active')">
                 <div class="active-dot"></div>
                 <b>Nível 1</b>
-                <span>Ganhe 13%</span>
+                <span>Ganhe 10%</span>
             </div>
             <div class="level-item" onclick="this.parentElement.querySelectorAll('.level-item').forEach(e=>e.classList.remove('active')); this.classList.add('active')">
                 <div class="active-dot"></div>
                 <b>Nível 2</b>
-                <span>Ganhe 2%</span>
+                <span>Ganhe 3%</span>
             </div>
             <div class="level-item" onclick="this.parentElement.querySelectorAll('.level-item').forEach(e=>e.classList.remove('active')); this.classList.add('active')">
                 <div class="active-dot"></div>
@@ -348,7 +401,7 @@
             </div>
         </div>
 
-        <div class="list-container">
+        <div class="list-container" id="listContainer">
             <div class="empty-icon"><i class="fa-solid fa-user-group"></i></div>
             <p>Nenhum membro encontrado neste nível.</p>
         </div>

@@ -13,6 +13,7 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
       import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
@@ -25,6 +26,7 @@
 
       const app = initializeApp(firebaseConfig);
       const auth = getAuth(app);
+      const db = getFirestore(app);
 
       // Configuração Global do SweetAlert Premium
       const Toast = Swal.mixin({
@@ -41,12 +43,22 @@
         }
       });
 
+      // Capturar código de indicação da URL ao carregar a página
+      window.addEventListener('DOMContentLoaded', () => {
+          const urlParams = new URLSearchParams(window.location.search);
+          const refCode = urlParams.get('ref');
+          if (refCode) {
+              document.getElementById('inviteCode').value = refCode.toUpperCase();
+          }
+      });
+
       // Função de Registro
       window.handleRegister = async (event) => {
           event.preventDefault();
           const email = document.getElementById('email').value;
           const password = document.getElementById('password').value;
           const confirmPassword = document.getElementById('confirmPassword').value;
+          const inviteCode = document.getElementById('inviteCode').value.trim().toUpperCase();
           const btn = document.querySelector('.btn-submit');
 
           if(password !== confirmPassword) {
@@ -62,20 +74,45 @@
           btn.disabled = true;
 
           try {
-              await createUserWithEmailAndPassword(auth, email, password);
+              // 1. Criar usuário no Firebase Auth
+              const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+              const user = userCredential.user;
+
+              // 2. Criar documento do usuário no Firestore com os dados iniciais e o vínculo de indicação
+              await setDoc(doc(db, "users", user.uid), {
+                  uid: user.uid,
+                  email: email,
+                  saldo: 0,
+                  lucro: 0,
+                  recarga: 0,
+                  recargaEquipe: 0,
+                  tamanhoEquipe: 0,
+                  checkinCount: 0,
+                  lastCheckin: "",
+                  refBy: inviteCode || "DIRETO", // Se não houver código, marca como entrada direta
+                  createdAt: new Date().toISOString()
+              });
+
               Toast.fire({
                   icon: 'success',
                   title: 'Parabéns!',
                   text: 'Sua conta Elite foi criada com sucesso.'
               });
+              
               setTimeout(() => { window.location.href = "home.html"; }, 1500);
           } catch (error) {
-              btn.innerHTML = 'Criar Conta';
+              console.error(error);
+              btn.innerHTML = 'Criar Conta Elite';
               btn.disabled = false;
+              
+              let errorMsg = 'Não foi possível criar sua conta.';
+              if (error.code === 'auth/email-already-in-use') errorMsg = 'Este e-mail já está em uso.';
+              if (error.code === 'auth/weak-password') errorMsg = 'A senha deve ter no mínimo 6 caracteres.';
+
               Toast.fire({
                   icon: 'error',
                   title: 'Erro no cadastro',
-                  text: 'Não foi possível criar sua conta.'
+                  text: errorMsg
               });
           }
       };
@@ -291,7 +328,7 @@
 
                 <div class="input-group">
                     <label><i class="fa-solid fa-ticket"></i> Código Convite (Opcional)</label>
-                    <input type="text" placeholder="Insira o código" class="input-field">
+                    <input type="text" id="inviteCode" placeholder="Insira o código" class="input-field">
                 </div>
 
                 <button type="submit" class="btn-submit">Criar Conta Elite</button>

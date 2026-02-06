@@ -12,7 +12,7 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
       import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-      import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
@@ -42,7 +42,12 @@
           const emptyState = document.getElementById('emptyState');
 
           try {
-              const q = query(collection(db, "historico"), where("userId", "==", uid));
+              // Busca no histórico vinculado ao UID do usuário logado
+              const q = query(
+                  collection(db, "historico"), 
+                  where("userId", "==", uid)
+              );
+              
               const querySnapshot = await getDocs(q);
 
               if (querySnapshot.empty) {
@@ -52,15 +57,26 @@
 
               emptyState.style.display = 'none';
               allTransactions = [];
-              querySnapshot.forEach(doc => allTransactions.push(doc.data()));
+
+              querySnapshot.forEach(doc => {
+                  allTransactions.push({
+                      id: doc.id,
+                      ...doc.data()
+                  });
+              });
               
-              // Ordenar por data (mais recente primeiro)
-              allTransactions.sort((a, b) => new Date(b.data) - new Date(a.data));
+              // Ordenação manual por data (caso o índice do Firestore não esteja pronto)
+              allTransactions.sort((a, b) => {
+                  const dateA = new Date(a.data || 0);
+                  const dateB = new Date(b.data || 0);
+                  return dateB - dateA;
+              });
 
               renderTransactions(allTransactions);
 
           } catch (error) {
               console.error("Erro ao carregar extrato:", error);
+              // Fallback para exibir erro na tela se necessário
           }
       }
 
@@ -81,15 +97,17 @@
 
               let icon, label, symbol, isNegative = false;
               
+              // Lógica de Identificação de Fluxo (+ ou -) e Ícones
               switch(data.tipo) {
                   case 'deposito':
                       icon = 'fa-arrow-down-long';
-                      label = 'Recarga Realizada';
+                      label = 'Recarga Via Pix';
                       symbol = '+';
+                      isNegative = false;
                       break;
                   case 'saque':
                       icon = 'fa-paper-plane';
-                      label = 'Saque Solicitado';
+                      label = 'Retirada de Saldo';
                       symbol = '-';
                       isNegative = true;
                       break;
@@ -97,23 +115,34 @@
                       icon = 'fa-chart-line';
                       label = 'Rendimento Diário';
                       symbol = '+';
+                      isNegative = false;
                       break;
                   case 'comissao':
                       icon = 'fa-users';
-                      label = 'Bônus de Indicação';
+                      label = 'Comissão de Rede';
                       symbol = '+';
+                      isNegative = false;
                       break;
                   case 'compra':
                       icon = 'fa-cart-shopping';
-                      label = 'Compra de Plano';
+                      label = 'Investimento M-Elite';
                       symbol = '-';
                       isNegative = true;
                       break;
+                  case 'bonus':
+                      icon = 'fa-gift';
+                      label = 'Bônus Administrativo';
+                      symbol = '+';
+                      isNegative = false;
+                      break;
                   default:
                       icon = 'fa-receipt';
-                      label = 'Transação';
+                      label = 'Movimentação';
                       symbol = '';
               }
+
+              // Formatação de data amigável
+              const dataFormatada = data.data ? new Date(data.data).toLocaleString('pt-BR') : 'Data não disponível';
 
               card.innerHTML = `
                   <div class="trans-icon-wrapper">
@@ -121,17 +150,17 @@
                   </div>
                   <div class="trans-details">
                       <span class="trans-name">${label}</span>
-                      <span class="trans-date">${data.data}</span>
+                      <span class="trans-date">${dataFormatada}</span>
                   </div>
                   <div class="trans-value ${isNegative ? 'negative' : 'positive'}">
-                      <span class="symbol">${symbol}</span> R$ ${parseFloat(data.valor).toFixed(2)}
+                      <span class="symbol">${symbol}</span> R$ ${parseFloat(data.valor || 0).toFixed(2).replace('.', ',')}
                   </div>
               `;
               container.appendChild(card);
           });
       }
 
-      // Função de Filtro
+      // Sistema de Filtro por Chips
       window.filterByType = function(type, element) {
           document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
           element.classList.add('active');
@@ -161,6 +190,7 @@
 
         body { background-color: var(--bg-light); color: var(--text-dark); min-height: 100vh; padding-bottom: 50px; }
 
+        /* Header Estilizado */
         .header-premium {
             background: linear-gradient(135deg, var(--mcd-red) 0%, #a50005 100%);
             height: 180px;
@@ -176,12 +206,14 @@
             position: absolute; left: 20px; top: 40px; width: 45px; height: 45px;
             background: rgba(255,255,255,0.2); border-radius: 15px;
             display: flex; align-items: center; justify-content: center; color: white; text-decoration: none;
+            transition: 0.3s;
         }
+        .back-link:active { transform: scale(0.9); background: rgba(255,255,255,0.3); }
 
         .header-premium h2 { font-weight: 900; font-size: 22px; letter-spacing: 1px; margin-top: 5px; }
         .header-premium p { font-size: 11px; font-weight: 700; opacity: 0.8; text-transform: uppercase; }
 
-        /* Filtros */
+        /* Filtros de Navegação Rápida */
         .filter-container {
             display: flex; gap: 10px; padding: 0 20px; overflow-x: auto;
             margin-top: -65px; margin-bottom: 25px; position: relative; z-index: 20;
@@ -193,20 +225,28 @@
             padding: 12px 22px; background: white; border-radius: 50px;
             font-size: 11px; font-weight: 800; color: #888; border: 1px solid rgba(0,0,0,0.05);
             white-space: nowrap; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: 0.3s;
+            cursor: pointer;
         }
-        .chip.active { background: var(--mcd-gold); color: var(--text-dark); border-color: var(--mcd-gold); }
+        .chip.active { background: var(--mcd-gold); color: var(--text-dark); border-color: var(--mcd-gold); transform: translateY(-2px); }
 
-        /* Transações */
-        .content-area { width: 90%; margin: 0 auto; position: relative; z-index: 10; }
+        /* Lista de Transações */
+        .content-area { width: 92%; margin: 0 auto; position: relative; z-index: 10; }
 
         .transaction-card {
             background: var(--pure-white); border-radius: 25px; padding: 18px;
             margin-bottom: 12px; display: flex; align-items: center; gap: 15px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.02); border: 1px solid rgba(255,255,255,0.8);
+            animation: slideUp 0.4s ease-out forwards;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .trans-icon-wrapper {
-            width: 48px; height: 48px; border-radius: 16px;
+            width: 50px; height: 50px; border-radius: 16px;
             display: flex; align-items: center; justify-content: center; font-size: 18px;
         }
 
@@ -214,17 +254,19 @@
         .trans-name { font-size: 13px; font-weight: 800; color: #333; }
         .trans-date { font-size: 10px; color: #aaa; font-weight: 700; margin-top: 2px; }
 
-        .trans-value { font-size: 15px; font-weight: 900; }
+        .trans-value { font-size: 14px; font-weight: 900; white-space: nowrap; }
         .positive { color: var(--success); }
         .negative { color: var(--error); }
 
-        /* Cores Temáticas */
+        /* Mapeamento de Cores por Tipo */
         .deposito .trans-icon-wrapper { background: #e6fff0; color: var(--success); }
         .saque .trans-icon-wrapper { background: #fff0f0; color: var(--error); }
         .lucro .trans-icon-wrapper { background: #fff9e6; color: var(--mcd-gold); }
         .comissao .trans-icon-wrapper { background: #eef2ff; color: var(--info); }
         .compra .trans-icon-wrapper { background: #f4f4f4; color: #555; }
+        .bonus .trans-icon-wrapper { background: #fff0f6; color: #d63384; }
 
+        /* Empty State */
         .empty-state { text-align: center; padding: 80px 20px; display: none; }
         .empty-state i { font-size: 50px; color: #ddd; margin-bottom: 15px; }
         .empty-state p { font-size: 13px; color: #999; font-weight: 600; }
@@ -234,7 +276,7 @@
 <body>
 
     <header class="header-premium">
-        <a href="home.html" class="back-link"><i class="fa-solid fa-chevron-left"></i></a>
+        <a href="perfil.html" class="back-link"><i class="fa-solid fa-chevron-left"></i></a>
         <p>Histórico Financeiro</p>
         <h2>EXTRATO ELITE</h2>
     </header>
@@ -245,15 +287,16 @@
         <div class="chip" onclick="filterByType('compra', this)">Investimentos</div>
         <div class="chip" onclick="filterByType('lucro', this)">Rendimentos</div>
         <div class="chip" onclick="filterByType('saque', this)">Saques</div>
-        <div class="chip" onclick="filterByType('comissao', this)">Bônus</div>
+        <div class="chip" onclick="filterByType('comissao', this)">Comissões</div>
     </div>
 
     <main class="content-area">
-        <div id="statementList"></div>
+        <div id="statementList">
+            </div>
 
         <div id="emptyState" class="empty-state">
             <i class="fa-solid fa-receipt"></i>
-            <p>Nenhuma movimentação encontrada.</p>
+            <p>Você ainda não possui movimentações financeiras em sua conta.</p>
         </div>
     </main>
 

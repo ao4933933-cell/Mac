@@ -8,10 +8,12 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import { getFirestore, doc, getDoc, updateDoc, increment, arrayUnion, collection, query, where, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
@@ -24,7 +26,124 @@
       };
 
       const app = initializeApp(firebaseConfig);
-      const analytics = getAnalytics(app);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      });
+
+      // LÓGICA DE INVESTIMENTO E COMISSÕES
+      window.investir = async (planoNome, valor, lucroDiario, img) => {
+          const user = auth.currentUser;
+          if (!user) return;
+
+          const userRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userRef);
+          const userData = userSnap.data();
+
+          if (userData.saldo < valor) {
+              Swal.fire({
+                  icon: 'error',
+                  title: 'Saldo Insuficiente',
+                  text: 'Faça uma recarga para adquirir este plano.',
+                  confirmButtonColor: '#db0007'
+              });
+              return;
+          }
+
+          Swal.fire({
+              title: 'Confirmar Investimento?',
+              text: `Você está adquirindo o ${planoNome} por R$ ${valor.toFixed(2)}`,
+              icon: 'warning',
+              showCancelButton: true,
+              confirmButtonText: 'Confirmar',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#db0007'
+          }).then(async (result) => {
+              if (result.isConfirmed) {
+                  try {
+                      // 1. Deduz saldo e adiciona plano
+                      const novoPlano = {
+                          nome: planoNome,
+                          valor: valor,
+                          lucroDiario: lucroDiario,
+                          dataCompra: new Date().toISOString(),
+                          proximoPagamento: getMeiaNoiteProxima(), // Define 00:00:00 do dia seguinte
+                          status: 'ativo',
+                          imagem: img
+                      };
+
+                      await updateDoc(userRef, {
+                          saldo: increment(-valor),
+                          planosAtivos: increment(1),
+                          listaPlanos: arrayUnion(novoPlano)
+                      });
+
+                      // 2. Distribuir Comissões (Nível 1: 10%, Nível 2: 3%, Nível 3: 1%)
+                      await distribuirComissoes(userData.refBy, valor);
+
+                      Swal.fire('Sucesso!', 'Seu plano está ativo e gerando lucros.', 'success')
+                      .then(() => window.location.href = 'planos.html');
+
+                  } catch (e) {
+                      Toast.fire({ icon: 'error', title: 'Erro ao processar investimento.' });
+                  }
+              }
+          });
+      };
+
+      // Função para calcular a próxima meia-noite exata
+      function getMeiaNoiteProxima() {
+          const agora = new Date();
+          const amanha = new Date(agora);
+          amanha.setDate(agora.getDate() + 1);
+          amanha.setHours(0, 0, 0, 0);
+          return amanha.toISOString();
+      }
+
+      // Função de distribuição de comissão recursiva para 3 níveis
+      async function distribuirComissoes(refBy, valorPlano) {
+          if (!refBy || refBy === "DIRETO") return;
+
+          const niveis = [0.10, 0.03, 0.01]; // 10%, 3%, 1%
+          let atualRef = refBy;
+
+          for (let i = 0; i < niveis.length; i++) {
+              if (!atualRef || atualRef === "DIRETO") break;
+
+              const q = query(collection(db, "users"), where("uid", "substring", atualRef)); // Busca pelo ShortID/UID
+              // Nota: Em produção, você deve buscar pelo campo 'meuCodigo' que criamos no registro
+              const usersRef = collection(db, "users");
+              const qSnap = await getDocs(query(usersRef, where("uid", "==", atualRef))); // Exemplo simplificado
+
+              // Logica de busca por ShortID (UID truncado)
+              const allUsers = await getDocs(usersRef);
+              let paiDoc = null;
+              allUsers.forEach(doc => {
+                  if(doc.id.substring(0,8).toUpperCase() === atualRef) paiDoc = doc;
+              });
+
+              if (paiDoc) {
+                  const comissao = valorPlano * niveis[i];
+                  await updateDoc(doc(db, "users", paiDoc.id), {
+                      lucro: increment(comissao),
+                      recargaEquipe: increment(valorPlano)
+                  });
+                  atualRef = paiDoc.data().refBy; // Sobe para o próximo nível
+              } else {
+                  break;
+              }
+          }
+      }
+
+      onAuthStateChanged(auth, (user) => {
+          if (!user) window.location.href = "index.html";
+      });
     </script>
 
     <style>
@@ -37,7 +156,6 @@
             --light-bg: #f5f5f7;
         }
 
-        /* Reset Geral */
         * {
             margin: 0; padding: 0; box-sizing: border-box;
             background-color: transparent;
@@ -54,19 +172,22 @@
 
         body { padding-bottom: 120px; }
 
-        /* Banner Superior Arredondado */
         .banner {
             width: 100%;
             height: 260px;
-            background: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url('banner.jpg'); 
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('banner.jpg'); 
             background-size: cover;
             background-position: center;
             border-bottom-left-radius: 45px;
             border-bottom-right-radius: 45px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* Navegação Rápida Estilizada */
+        .banner h1 { color: white; font-weight: 900; font-size: 28px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
         .quick-nav {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -79,11 +200,7 @@
             z-index: 100;
         }
 
-        .nav-item {
-            text-align: center;
-            text-decoration: none;
-            color: var(--text-main);
-        }
+        .nav-item { text-align: center; text-decoration: none; color: var(--text-main); }
 
         .icon-circle {
             width: 52px; height: 52px;
@@ -97,10 +214,8 @@
             border: 1px solid #feeaea;
         }
 
-        .nav-item:active .icon-circle { transform: scale(0.9); background: var(--mcd-red) !important; color: white; }
         .nav-item span { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #444; }
 
-        /* Letreiro Infinito (Correção do Vazio) */
         .notif-wrapper {
             background: var(--pure-white) !important;
             margin: 0 20px 30px;
@@ -110,7 +225,6 @@
             align-items: center;
             border: 1px solid #eee;
             overflow: hidden;
-            position: relative;
         }
 
         .notif-tag {
@@ -122,7 +236,6 @@
             font-weight: 800;
             z-index: 10;
             margin-right: 10px;
-            box-shadow: 4px 0 15px rgba(255,255,255,1);
         }
 
         .marquee-content {
@@ -131,21 +244,14 @@
             animation: scroll-left 25s linear infinite;
         }
 
-        .marquee-content span {
-            font-size: 13px;
-            font-weight: 500;
-            color: #555;
-            padding-right: 40px;
-        }
-
+        .marquee-content span { font-size: 13px; font-weight: 500; color: #555; padding-right: 40px; }
         .marquee-content b { color: #27ae60; font-weight: 700; }
 
         @keyframes scroll-left {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); } /* Roda metade pois o conteúdo é duplicado */
+            100% { transform: translateX(-50%); }
         }
 
-        /* Cards de Investimento Profissionais */
         .container { padding: 0 20px; }
 
         .plan-card {
@@ -158,16 +264,11 @@
         }
 
         .plan-header { padding: 25px; text-align: center; }
-        .plan-header h3 { font-size: 22px; font-weight: 800; color: #1a1a1b; letter-spacing: -0.5px; }
-        .plan-header p { font-size: 12px; color: var(--mcd-red); font-weight: 700; margin-top: 6px; text-transform: uppercase; }
+        .plan-header h3 { font-size: 22px; font-weight: 800; color: #1a1a1b; }
+        .plan-header p { font-size: 12px; color: var(--mcd-red); font-weight: 700; text-transform: uppercase; }
 
         .img-box { width: 100%; height: 230px; overflow: hidden; position: relative; }
         .img-box img { width: 100%; height: 100%; object-fit: cover; }
-        .img-box::after {
-            content: ''; position: absolute; bottom: 0; left: 0;
-            width: 100%; height: 40px;
-            background: linear-gradient(to top, #fafafa, transparent);
-        }
 
         .plan-grid {
             display: grid;
@@ -177,13 +278,7 @@
             background: #fafafa !important;
         }
 
-        .grid-cell {
-            background: white !important;
-            padding: 15px;
-            border-radius: 20px;
-            border: 1px solid #f0f0f0;
-        }
-
+        .grid-cell { background: white !important; padding: 15px; border-radius: 20px; border: 1px solid #f0f0f0; }
         .cell-label { font-size: 11px; color: var(--text-muted); font-weight: 600; display: block; margin-bottom: 5px; }
         .cell-value { font-size: 16px; font-weight: 800; color: #000; }
 
@@ -199,12 +294,11 @@
             font-weight: 800;
             font-size: 17px;
             box-shadow: 0 10px 25px rgba(219, 0, 7, 0.25);
-            transition: 0.3s;
+            cursor: pointer;
+            border: none;
+            width: calc(100% - 50px);
         }
 
-        .btn-invest:active { transform: scale(0.96); box-shadow: none; }
-
-        /* Tab Bar Estilo App Store */
         .bottom-nav {
             position: fixed;
             bottom: 25px; left: 20px; right: 20px;
@@ -215,10 +309,9 @@
             border-radius: 30px;
             box-shadow: 0 15px 40px rgba(0,0,0,0.12);
             z-index: 1000;
-            border: 1px solid rgba(255,255,255,0.4);
         }
 
-        .tab-link { text-align: center; text-decoration: none; color: #bbb; transition: 0.3s; }
+        .tab-link { text-align: center; text-decoration: none; color: #bbb; }
         .tab-link.active { color: var(--mcd-red); }
         .tab-link i { font-size: 24px; margin-bottom: 6px; display: block; }
         .tab-link span { font-size: 10px; font-weight: 700; text-transform: uppercase; }
@@ -227,7 +320,9 @@
 </head>
 <body>
 
-    <div class="banner"></div>
+    <div class="banner">
+        <h1>INVISTA NA ELITE</h1>
+    </div>
 
     <div class="quick-nav">
         <a href="deposito.html" class="nav-item">
@@ -251,18 +346,10 @@
     <div class="notif-wrapper">
         <div class="notif-tag">LIVE</div>
         <div class="marquee-content">
-            <span>lu***@gmail.com investiu <b>R$ 150,00</b></span>
+            <span>lu***@gmail.com investiu <b>R$ 60,00</b></span>
             <span>ka***@hotmail.com sacou <b>R$ 450,00</b></span>
-            <span>an***@outlook.com investiu <b>R$ 60,00</b></span>
+            <span>an***@outlook.com investiu <b>R$ 150,00</b></span>
             <span>ma***@gmail.com sacou <b>R$ 1.200,00</b></span>
-            <span>vi***@gmail.com investiu <b>R$ 750,00</b></span>
-            <span>jo***@uol.com.br sacou <b>R$ 85,00</b></span>
-            <span>lu***@gmail.com investiu <b>R$ 150,00</b></span>
-            <span>ka***@hotmail.com sacou <b>R$ 450,00</b></span>
-            <span>an***@outlook.com investiu <b>R$ 60,00</b></span>
-            <span>ma***@gmail.com sacou <b>R$ 1.200,00</b></span>
-            <span>vi***@gmail.com investiu <b>R$ 750,00</b></span>
-            <span>jo***@uol.com.br sacou <b>R$ 85,00</b></span>
         </div>
     </div>
 
@@ -271,7 +358,7 @@
         <div class="plan-card">
             <div class="plan-header">
                 <h3>McDonald's M1</h3>
-                <p>Lucro Diário • Saque Imediato</p>
+                <p>Rendimento Diário Programado</p>
             </div>
             <div class="img-box">
                 <img src="plano1.jpg" alt="M1">
@@ -282,13 +369,13 @@
                 <div class="grid-cell"><span class="cell-label">CICLO</span><span class="cell-value">60 Dias</span></div>
                 <div class="grid-cell"><span class="cell-label">TOTAL</span><span class="cell-value">R$ 210,00</span></div>
             </div>
-            <a href="#" class="btn-invest">Investir agora</a>
+            <button onclick="investir('McDonald\'s M1', 60, 3.50, 'plano1.jpg')" class="btn-invest">Investir agora</button>
         </div>
 
         <div class="plan-card">
             <div class="plan-header">
                 <h3>McDonald's M2</h3>
-                <p>Lucro Diário • Saque Imediato</p>
+                <p>Rendimento Diário Programado</p>
             </div>
             <div class="img-box">
                 <img src="plano2.jpg" alt="M2">
@@ -299,7 +386,7 @@
                 <div class="grid-cell"><span class="cell-label">CICLO</span><span class="cell-value">60 Dias</span></div>
                 <div class="grid-cell"><span class="cell-label">TOTAL</span><span class="cell-value">R$ 750,00</span></div>
             </div>
-            <a href="#" class="btn-invest">Investir agora</a>
+            <button onclick="investir('McDonald\'s M2', 150, 12.50, 'plano2.jpg')" class="btn-invest">Investir agora</button>
         </div>
 
     </div>

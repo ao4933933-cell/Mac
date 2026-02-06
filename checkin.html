@@ -57,9 +57,10 @@
               // Recompensa Aleatória 0.25 a 1.00
               const reward = (Math.random() * (1.00 - 0.25) + 0.25).toFixed(2);
               
+              // ALTERAÇÃO: Agora incrementa 'lucro' em vez de 'saldo'
               await setDoc(userRef, {
                   lastCheckin: today,
-                  saldo: increment(parseFloat(reward)),
+                  lucro: increment(parseFloat(reward)),
                   checkinCount: increment(1)
               }, { merge: true });
 

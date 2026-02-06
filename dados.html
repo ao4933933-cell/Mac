@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="color-scheme" content="light">
+    <title>McDonald's Elite - Dados da Conta</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAuth, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
+        authDomain: "mac09875.firebaseapp.com",
+        projectId: "mac09875",
+        storageBucket: "mac09875.firebasestorage.app",
+        messagingSenderId: "1036489448526",
+        appId: "1:1036489448526:web:aa40d000e12f21a6b0771f"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+      });
+
+      onAuthStateChanged(auth, async (user) => {
+          if (user) {
+              document.getElementById('emailDisplay').innerText = user.email;
+              document.getElementById('idDisplay').innerText = user.uid.toUpperCase();
+              
+              const docRef = doc(db, "users", user.uid);
+              const docSnap = await getDoc(docRef);
+              if (docSnap.exists()) {
+                  const data = docSnap.data();
+                  document.getElementById('dateJoined').innerText = data.createdAt || "Membro Recente";
+              }
+          } else {
+              window.location.href = "index.html";
+          }
+      });
+
+      window.changePassword = async () => {
+          const newPass = document.getElementById('newPass').value;
+          const confirmPass = document.getElementById('confirmPass').value;
+          const user = auth.currentUser;
+
+          if (!newPass || newPass.length < 6) {
+              Toast.fire({ icon: 'warning', title: 'Senha muito curta (mín. 6 caracteres)' });
+              return;
+          }
+
+          if (newPass !== confirmPass) {
+              Toast.fire({ icon: 'error', title: 'As senhas não coincidem' });
+              return;
+          }
+
+          try {
+              await updatePassword(user, newPass);
+              Swal.fire({
+                  title: 'SUCESSO!',
+                  text: 'Sua senha foi atualizada com segurança.',
+                  icon: 'success',
+                  confirmButtonColor: '#db0007',
+                  customClass: { popup: 'premium-popup' }
+              });
+              document.getElementById('newPass').value = '';
+              document.getElementById('confirmPass').value = '';
+          } catch (error) {
+              Toast.fire({ icon: 'error', title: 'Erro ao atualizar. Tente logar novamente.' });
+          }
+      };
+    </script>
+
+    <style>
+        :root {
+            --mcd-red: #db0007;
+            --mcd-gold: #ffbc0d;
+            --pure-white: #ffffff;
+            --bg-light: #f5f5f7;
+            --text-dark: #1d1d1f;
+            --text-muted: #8e8e93;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+
+        body { background-color: var(--bg-light); color: var(--text-dark); display: flex; justify-content: center; min-height: 100vh; }
+
+        .main-wrapper {
+            background-color: var(--bg-light);
+            width: 100%;
+            max-width: 450px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            padding: 30px 20px;
+            display: flex;
+            align-items: center;
+            background: var(--bg-light);
+        }
+
+        .back-btn {
+            width: 45px; height: 45px;
+            background: white; border-radius: 15px;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-dark); text-decoration: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .top-bar h1 { flex: 1; text-align: center; font-size: 18px; font-weight: 800; margin-right: 45px; }
+
+        /* Card de Informações */
+        .info-card {
+            background: white;
+            margin: 0 20px 25px;
+            border-radius: 30px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        }
+
+        .data-row {
+            margin-bottom: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 15px;
+        }
+
+        .data-row:last-child { border: none; margin-bottom: 0; padding-bottom: 0; }
+
+        .label { font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 5px; }
+        .value { font-size: 14px; font-weight: 700; color: var(--text-dark); word-break: break-all; }
+
+        /* Formulário de Senha */
+        .password-section {
+            background: white;
+            margin: 0 20px 40px;
+            border-radius: 30px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+        }
+
+        .section-title { font-size: 16px; font-weight: 900; margin-bottom: 20px; color: var(--mcd-red); display: flex; align-items: center; gap: 10px; }
+
+        .input-group { margin-bottom: 20px; }
+        .input-group input {
+            width: 100%;
+            padding: 16px 20px;
+            border-radius: 18px;
+            border: 2px solid #f5f5f7;
+            background: #f9f9fb;
+            font-weight: 600;
+            font-size: 14px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-group input:focus { border-color: var(--mcd-red); background: white; }
+
+        .btn-update {
+            width: 100%;
+            background: var(--mcd-red);
+            color: white;
+            border: none;
+            padding: 18px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 15px;
+            text-transform: uppercase;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(219, 0, 7, 0.15);
+            transition: 0.3s;
+        }
+
+        .btn-update:active { transform: scale(0.96); }
+
+        .premium-popup { border-radius: 30px !important; font-family: 'Montserrat', sans-serif !important; }
+
+    </style>
+</head>
+<body>
+
+    <div class="main-wrapper">
+        <div class="top-bar">
+            <a href="perfil.html" class="back-btn">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+            <h1>Dados da Conta</h1>
+        </div>
+
+        <div class="info-card">
+            <div class="data-row">
+                <span class="label">E-mail de Acesso</span>
+                <span class="value" id="emailDisplay">carregando...</span>
+            </div>
+            <div class="data-row">
+                <span class="label">ID da Conta (UID)</span>
+                <span class="value" id="idDisplay">carregando...</span>
+            </div>
+            <div class="data-row">
+                <span class="label">Status da Conta</span>
+                <span class="value" style="color: #27ae60;">Elite VIP Ativo</span>
+            </div>
+        </div>
+
+        <div class="password-section">
+            <h2 class="section-title"><i class="fa-solid fa-shield-halved"></i> Alterar Senha</h2>
+            
+            <div class="input-group">
+                <span class="label">Nova Senha</span>
+                <input type="password" id="newPass" placeholder="••••••••">
+            </div>
+
+            <div class="input-group">
+                <span class="label">Confirmar Nova Senha</span>
+                <input type="password" id="confirmPass" placeholder="••••••••">
+            </div>
+
+            <button class="btn-update" onclick="changePassword()">Atualizar Senha</button>
+        </div>
+    </div>
+
+</body>
+</html>

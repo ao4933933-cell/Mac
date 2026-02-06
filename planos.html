@@ -8,11 +8,12 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
       import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-      import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
@@ -27,78 +28,138 @@
       const auth = getAuth(app);
       const db = getFirestore(app);
 
+      // Função para calcular a próxima meia-noite exata em ISO String
+      function calcularProximaMeiaNoite() {
+          const agora = new Date();
+          const amanha = new Date(agora);
+          amanha.setDate(agora.getDate() + 1);
+          amanha.setHours(0, 0, 0, 0);
+          return amanha.toISOString();
+      }
+
       onAuthStateChanged(auth, async (user) => {
           if (user) {
-              loadUserInvestments(user.uid);
+              await processarELoadInvestments(user.uid);
           } else {
               window.location.href = "index.html";
           }
       });
 
-      async function loadUserInvestments(uid) {
+      async function processarELoadInvestments(uid) {
           const container = document.getElementById('investmentsList');
           const emptyState = document.getElementById('emptyState');
-          let totalProfit = 0;
-          let count = 0;
+          const userRef = doc(db, "users", uid);
+          const userSnap = await getDoc(userRef);
 
-          try {
-              // Busca na coleção 'compras' onde o userId é igual ao logado
-              const q = query(collection(db, "compras"), where("userId", "==", uid));
-              const querySnapshot = await getDocs(q);
+          if (!userSnap.exists()) return;
 
-              if (querySnapshot.empty) {
-                  emptyState.style.display = 'block';
-                  return;
+          const userData = userSnap.data();
+          const planos = userData.listaPlanos || [];
+          let totalProfitDiario = 0;
+          let lucroParaReceber = 0;
+          let planosAtualizados = [...planos];
+          let houvePagamento = false;
+
+          if (planos.length === 0) {
+              emptyState.style.display = 'block';
+              return;
+          }
+
+          emptyState.style.display = 'none';
+          container.innerHTML = '';
+
+          const agoraISO = new Date().toISOString();
+
+          // MAP PARA RENDERIZAR E CALCULAR PAGAMENTOS PENDENTES
+          planos.forEach((plano, index) => {
+              totalProfitDiario += parseFloat(plano.lucroDiario || 0);
+              
+              // LÓGICA DE PAGAMENTO 00:00
+              // Se a data de agora for maior que a data agendada para o pagamento
+              if (agoraISO >= plano.proximoPagamento) {
+                  lucroParaReceber += parseFloat(plano.lucroDiario);
+                  // Atualiza a data do próximo pagamento do plano específico para amanhã 00:00
+                  planosAtualizados[index].proximoPagamento = calcularProximaMeiaNoite();
+                  houvePagamento = true;
               }
 
-              emptyState.style.display = 'none';
-              container.innerHTML = '';
+              // Calcular progresso baseado em 60 dias (exemplo)
+              const dataCompra = new Date(plano.dataCompra);
+              const hoje = new Date();
+              const diffTime = Math.abs(hoje - dataCompra);
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              const progresso = Math.min((diffDays / 60) * 100, 100);
 
-              querySnapshot.forEach((doc) => {
-                  const data = doc.data();
-                  count++;
-                  totalProfit += parseFloat(data.lucroDiario || 0);
-
-                  const card = document.createElement('div');
-                  card.className = 'investment-card';
-                  card.innerHTML = `
-                      <div class="card-info">
-                          <div class="prod-icon">
-                              <i class="fa-solid fa-box-open"></i>
-                          </div>
-                          <div class="prod-details">
-                              <h4>${data.nomePlano || 'Plano McDonald\'s'}</h4>
-                              <span>Iniciado em: ${data.dataCompra || 'Recentemente'}</span>
-                          </div>
-                          <div class="status-tag">Ativo</div>
+              const card = document.createElement('div');
+              card.className = 'investment-card';
+              card.innerHTML = `
+                  <div class="card-info">
+                      <div class="prod-icon">
+                          <img src="${plano.imagem || 'plano1.jpg'}" style="width:100%; border-radius:12px;">
                       </div>
-                      <div class="card-stats">
-                          <div class="stat">
-                              <span class="label">Renda Diária</span>
-                              <span class="value">R$ ${parseFloat(data.lucroDiario).toFixed(2)}</span>
-                          </div>
-                          <div class="stat">
-                              <span class="label">Total Bruto</span>
-                              <span class="value">R$ ${parseFloat(data.lucroTotal).toFixed(2)}</span>
-                          </div>
-                          <div class="stat">
-                              <span class="label">Ciclo</span>
-                              <span class="value">${data.ciclo || '60'} Dias</span>
-                          </div>
+                      <div class="prod-details">
+                          <h4>${plano.nome || 'Plano McDonald\'s'}</h4>
+                          <span>Ativo desde: ${new Date(plano.dataCompra).toLocaleDateString('pt-BR')}</span>
                       </div>
-                      <div class="progress-container">
-                          <div class="progress-bar" style="width: 15%"></div>
+                      <div class="status-tag">Rendendo</div>
+                  </div>
+                  <div class="card-stats">
+                      <div class="stat">
+                          <span class="label">Ganhos Diários</span>
+                          <span class="value">R$ ${parseFloat(plano.lucroDiario).toFixed(2).replace('.', ',')}</span>
                       </div>
-                  `;
-                  container.appendChild(card);
-              });
+                      <div class="stat">
+                          <span class="label">Total Estimado</span>
+                          <span class="value">R$ ${(parseFloat(plano.lucroDiario) * 60).toFixed(2).replace('.', ',')}</span>
+                      </div>
+                      <div class="stat">
+                          <span class="label">Próximo Ciclo</span>
+                          <span class="value">00:00h</span>
+                      </div>
+                  </div>
+                  <div class="progress-container">
+                      <div class="progress-bar" style="width: ${progresso}%"></div>
+                  </div>
+                  <p style="font-size: 9px; color: #ccc; margin-top: 8px; font-weight: 600;">
+                      <i class="fa-regular fa-clock"></i> Próximo crédito: ${new Date(plano.proximoPagamento).toLocaleString('pt-BR')}
+                  </p>
+              `;
+              container.appendChild(card);
+          });
 
-              document.getElementById('totalProducts').innerText = count;
-              document.getElementById('dailyIncome').innerText = "R$ " + totalProfit.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+          // SE HOUVE LUCRO A SER CREDITADO
+          if (houvePagamento) {
+              try {
+                  await updateDoc(userRef, {
+                      lucro: increment(lucroParaReceber),
+                      listaPlanos: planosAtualizados
+                  });
 
-          } catch (error) {
-              console.error("Erro ao carregar:", error);
+                  // SweetAlert Premium e Sofisticado
+                  Swal.fire({
+                      title: '<span style="color: #db0007; font-weight: 900;">LUCRO CREDITADO!</span>',
+                      html: `
+                        <div style="padding: 10px;">
+                            <p style="font-weight: 600; color: #555;">Sua rede de investimentos McDonald's acaba de render!</p>
+                            <h2 style="font-size: 32px; color: #27ae60; margin: 15px 0;">+ R$ ${lucroParaReceber.toFixed(2).replace('.', ',')}</h2>
+                            <p style="font-size: 12px; color: #999;">O valor foi adicionado diretamente ao seu <b>Saldo de Lucro</b>.</p>
+                        </div>
+                      `,
+                      icon: 'success',
+                      background: '#fff',
+                      confirmButtonText: 'EXCELENTE!',
+                      confirmButtonColor: '#db0007',
+                      backdrop: `rgba(219,0,7,0.15)`,
+                      showClass: { popup: 'animate__animated animate__fadeInUp' },
+                      hideClass: { popup: 'animate__animated animate__fadeOutDown' }
+                  });
+              } catch (e) {
+                  console.error("Erro ao creditar lucro:", e);
+              }
           }
+
+          document.getElementById('totalProducts').innerText = planos.length;
+          document.getElementById('dailyIncome').innerText = "R$ " + totalProfitDiario.toLocaleString('pt-BR', {minimumFractionDigits: 2});
       }
     </script>
 
@@ -113,9 +174,8 @@
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
 
-        body { background-color: var(--bg-light); color: var(--text-dark); min-height: 100vh; padding-bottom: 30px; }
+        body { background-color: var(--bg-light); color: var(--text-dark); min-height: 100vh; padding-bottom: 50px; }
 
-        /* Header Premium - Correção de Z-index */
         .header-collection {
             background: linear-gradient(135deg, var(--mcd-red) 0%, #a50005 100%);
             height: 220px;
@@ -124,13 +184,12 @@
             border-bottom-right-radius: 50px;
             color: white;
             position: relative;
-            z-index: 1; /* Fica atrás dos cards */
+            z-index: 1;
         }
 
         .top-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
         .back-btn { width: 45px; height: 45px; background: rgba(255,255,255,0.2); border-radius: 15px; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; }
 
-        /* Dashboard de Resumo - Correção de Z-index e posicionamento */
         .summary-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -138,7 +197,7 @@
             width: 90%;
             margin: -60px auto 30px;
             position: relative;
-            z-index: 10; /* Garante que os cards fiquem acima do banner vermelho */
+            z-index: 10;
         }
 
         .summary-item {
@@ -156,7 +215,6 @@
         .summary-item .label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; margin-bottom: 4px; }
         .summary-item .value { font-size: 18px; font-weight: 900; color: var(--text-dark); }
 
-        /* Lista de Investimentos */
         .content-section { padding: 0 20px; }
         .section-title { font-size: 16px; font-weight: 800; margin-bottom: 20px; color: #333; display: flex; align-items: center; gap: 10px; }
 
@@ -170,7 +228,7 @@
         }
 
         .card-info { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; position: relative; }
-        .prod-icon { width: 50px; height: 50px; background: #f8f9fb; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: var(--mcd-red); font-size: 20px; border: 1px solid #eee; }
+        .prod-icon { width: 55px; height: 55px; background: #f8f9fb; border-radius: 15px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px solid #eee; }
         .prod-details h4 { font-size: 15px; font-weight: 800; color: #1a1a1b; }
         .prod-details span { font-size: 11px; color: #aaa; font-weight: 600; }
         
@@ -182,12 +240,15 @@
         .stat .value { font-size: 13px; font-weight: 800; color: #333; }
 
         .progress-container { width: 100%; height: 6px; background: #f0f0f2; border-radius: 10px; overflow: hidden; }
-        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--mcd-red), var(--mcd-gold)); border-radius: 10px; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--mcd-red), var(--mcd-gold)); border-radius: 10px; transition: 1s ease-in-out; }
 
-        /* Empty State */
         .empty-state { text-align: center; padding: 60px 20px; display: none; }
         .empty-state i { font-size: 60px; color: #ddd; margin-bottom: 20px; }
         .empty-state p { font-size: 14px; color: #999; font-weight: 600; }
+
+        /* Estilização SweetAlert Customizada */
+        .swal2-popup { border-radius: 35px !important; padding: 20px !important; }
+        .swal2-confirm { border-radius: 20px !important; padding: 15px 40px !important; font-weight: 800 !important; text-transform: uppercase !important; }
 
     </style>
 </head>
@@ -204,20 +265,20 @@
     <div class="summary-grid">
         <div class="summary-item">
             <i class="fa-solid fa-layer-group"></i>
-            <span class="label">Total de Planos</span>
-            <span class="value" id="totalProducts">0</span>
+            <span class="label">Planos Ativos</span>
+            <span class="value" id="totalProducts">...</span>
         </div>
         <div class="summary-item">
             <i class="fa-solid fa-chart-line gold"></i>
             <span class="label">Renda Diária</span>
-            <span class="value" id="dailyIncome">R$ 0,00</span>
+            <span class="value" id="dailyIncome">...</span>
         </div>
     </div>
 
     <main class="content-section">
         <h4 class="section-title">
             <i class="fa-solid fa-boxes-stacked" style="color: var(--mcd-red);"></i> 
-            Produtos Adquiridos
+            Gestão de Ativos
         </h4>
 
         <div id="investmentsList">
@@ -225,7 +286,7 @@
 
         <div id="emptyState" class="empty-state">
             <i class="fa-solid fa-box-open"></i>
-            <p>Você ainda não possui produtos em sua coleção.</p>
+            <p>Sua coleção está vazia.<br>Adquira um plano na página inicial.</p>
         </div>
     </main>
 

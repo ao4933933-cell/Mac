@@ -2,13 +2,16 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="color-scheme" content="light">
-    <title>McDonald's - Login</title>
+    <title>McDonald's Elite - Login</title>
     
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
+
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
       import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
       const firebaseConfig = {
@@ -17,26 +20,67 @@
         projectId: "mac09875",
         storageBucket: "mac09875.firebasestorage.app",
         messagingSenderId: "1036489448526",
-        appId: "1:1036489448526:web:aa40d000e12f21a6b0771f",
-        measurementId: "G-R60G1KZPFR"
+        appId: "1:1036489448526:web:aa40d000e12f21a6b0771f"
       };
 
       const app = initializeApp(firebaseConfig);
-      const analytics = getAnalytics(app);
       const auth = getAuth(app);
+
+      // Configuração Global do SweetAlert Premium
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        background: '#fff',
+        color: '#1d1d1f',
+        didOpen: (toast) => {
+          toast.addEventListener('mouseenter', Swal.stopTimer)
+          toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+      });
 
       // Função de Login
       window.handleLogin = async (event) => {
           event.preventDefault();
           const email = document.getElementById('email').value;
           const password = document.getElementById('password').value;
+          const btn = document.querySelector('.btn-submit');
+
+          // Feedback visual de carregamento
+          btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Acessando...';
+          btn.disabled = true;
 
           try {
               await signInWithEmailAndPassword(auth, email, password);
-              alert("Login realizado com sucesso!");
-              window.location.href = "home.html"; // Redireciona para a página principal
+              Toast.fire({
+                  icon: 'success',
+                  title: 'Acesso liberado!',
+                  text: 'Bem-vindo ao McDonald\'s Elite'
+              });
+              setTimeout(() => { window.location.href = "home.html"; }, 1500);
           } catch (error) {
-              alert("Erro ao acessar: Verifique seu e-mail e senha.");
+              btn.innerHTML = 'Entrar';
+              btn.disabled = false;
+              Toast.fire({
+                  icon: 'error',
+                  title: 'Erro de acesso',
+                  text: 'E-mail ou senha incorretos.'
+              });
+          }
+      };
+
+      // Função Mostrar/Ocultar Senha
+      window.togglePass = () => {
+          const passInput = document.getElementById('password');
+          const icon = document.querySelector('.toggle-pass i');
+          if (passInput.type === 'password') {
+              passInput.type = 'text';
+              icon.classList.replace('fa-eye', 'fa-eye-slash');
+          } else {
+              passInput.type = 'password';
+              icon.classList.replace('fa-eye-slash', 'fa-eye');
           }
       };
     </script>
@@ -44,60 +88,49 @@
     <style>
         :root {
             --mcd-red: #db0007;
-            --pure-white: #ffffff !important;
-            --bg-light: #f8f9fa;
-            --text-dark: #1a1a1b;
-            --text-muted: #9aa0a6;
-            --border-color: #e8eaed;
-            --soft-shadow: 0 10px 40px rgba(0,0,0,0.06);
+            --mcd-gold: #ffbc0d;
+            --pure-white: #ffffff;
+            --bg-light: #f5f5f7;
+            --text-dark: #1d1d1f;
+            --text-muted: #8e8e93;
         }
 
-        /* Garantia de Fundo Branco Total */
-        html, body {
-            background-color: #f1f3f4 !important;
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            font-family: 'Inter', -apple-system, system-ui, sans-serif;
-            display: flex;
-            flex-direction: column;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
+
+        body { background-color: var(--bg-light); display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
 
         .main-wrapper {
             background-color: var(--pure-white);
-            min-height: 100vh;
             width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
+            max-width: 450px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
             position: relative;
-            overflow-x: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
         }
 
-        /* Banner Superior idêntico ao registro */
         .header-image {
             width: 100%;
-            height: 280px;
+            height: 300px;
             background: url('bannerlogineregistro.jpg') center/cover no-repeat;
             position: relative;
         }
 
-        /* Card de Formulário com Curva Premium */
         .form-container {
             background: var(--pure-white);
-            margin-top: -40px;
+            margin-top: -50px;
             border-radius: 40px 40px 0 0;
-            padding: 35px 25px;
-            position: relative;
-            z-index: 5;
+            padding: 40px 30px;
+            flex-grow: 1;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.05);
         }
 
-        /* Seletor de Login/Cadastro */
+        /* Tabs Premium */
         .tabs {
             display: flex;
-            background: #f1f3f4;
-            padding: 6px;
-            border-radius: 15px;
+            background: #eeeef0;
+            padding: 5px;
+            border-radius: 18px;
             margin-bottom: 35px;
         }
 
@@ -105,97 +138,108 @@
             flex: 1;
             text-align: center;
             padding: 12px;
-            font-weight: 700;
-            font-size: 15px;
+            font-weight: 800;
+            font-size: 14px;
             color: var(--text-muted);
             text-decoration: none;
-            border-radius: 12px;
+            border-radius: 14px;
             transition: 0.3s;
         }
 
         .tab.active {
             background: var(--pure-white);
             color: var(--mcd-red);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
 
-        /* Estilização dos Inputs */
-        .input-group {
-            margin-bottom: 22px;
-        }
+        /* Inputs Premium */
+        .input-group { margin-bottom: 25px; position: relative; }
 
         .input-group label {
             display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: #444;
-            margin-bottom: 8px;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
             margin-left: 5px;
         }
 
         .input-field {
             width: 100%;
-            padding: 16px 20px;
-            background: #f8f9fa;
-            border: 1px solid var(--border-color);
-            border-radius: 18px;
+            padding: 18px 20px;
+            background: #f8f8fa;
+            border: 1px solid #efeff4;
+            border-radius: 20px;
             font-size: 15px;
+            font-weight: 600;
             color: var(--text-dark);
             outline: none;
             transition: 0.2s;
         }
 
         .input-field:focus {
+            background: #fff;
             border-color: var(--mcd-red);
-            background: var(--pure-white);
             box-shadow: 0 0 0 4px rgba(219, 0, 7, 0.05);
         }
 
-        .password-wrapper {
-            position: relative;
-        }
+        .password-wrapper { position: relative; }
 
         .toggle-pass {
             position: absolute;
-            right: 18px;
+            right: 20px;
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-muted);
             cursor: pointer;
+            font-size: 18px;
+            padding: 5px;
         }
 
-        /* Botão Entrar conforme imagem 616761.jpg */
+        /* Botão Premium */
         .btn-submit {
             width: 100%;
-            background: var(--mcd-red);
+            background: linear-gradient(135deg, var(--mcd-red) 0%, #a50005 100%);
             color: white;
             border: none;
-            padding: 18px;
-            border-radius: 50px;
-            font-size: 18px;
-            font-weight: 800;
+            padding: 20px;
+            border-radius: 22px;
+            font-size: 17px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             margin-top: 15px;
-            box-shadow: 0 8px 20px rgba(219, 0, 7, 0.25);
+            box-shadow: 0 12px 25px rgba(219, 0, 7, 0.2);
             cursor: pointer;
             transition: 0.3s;
         }
 
-        .btn-submit:active {
-            transform: scale(0.97);
-        }
+        .btn-submit:active { transform: scale(0.96); opacity: 0.9; }
 
         .footer-link {
             text-align: center;
-            margin-top: 25px;
+            margin-top: 30px;
             font-size: 14px;
+            font-weight: 600;
             color: var(--text-muted);
         }
 
         .footer-link a {
             color: var(--mcd-red);
             text-decoration: none;
-            font-weight: 700;
+            font-weight: 800;
         }
+
+        /* Customização SweetAlert para manter clareza */
+        .swal2-popup {
+            border-radius: 25px !important;
+            padding: 1.5rem !important;
+            font-family: 'Montserrat', sans-serif !important;
+        }
+        .swal2-title { font-weight: 800 !important; font-size: 18px !important; }
+        .swal2-html-container { font-weight: 600 !important; font-size: 14px !important; }
 
     </style>
 </head>
@@ -206,29 +250,31 @@
 
         <div class="form-container">
             <div class="tabs">
-                <a href="#" class="tab active">Login</a>
-                <a href="registro.html" class="tab">Cadastro</a>
+                <a href="#" class="tab active">LOGIN</a>
+                <a href="registro.html" class="tab">CADASTRO</a>
             </div>
 
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="input-group">
-                    <label>E-mail</label>
-                    <input type="email" id="email" placeholder="Digite seu e-mail" class="input-field" required>
+                    <label><i class="fa-solid fa-envelope" style="margin-right: 5px;"></i> E-mail de Acesso</label>
+                    <input type="email" id="email" placeholder="nome@exemplo.com" class="input-field" required>
                 </div>
 
                 <div class="input-group">
-                    <label>Senha</label>
+                    <label><i class="fa-solid fa-lock" style="margin-right: 5px;"></i> Senha Segurança</label>
                     <div class="password-wrapper">
-                        <input type="password" id="password" placeholder="Digite sua senha" class="input-field" required>
-                        <span class="toggle-pass">👁️</span>
+                        <input type="password" id="password" placeholder="••••••••" class="input-field" required>
+                        <span class="toggle-pass" onclick="togglePass()">
+                            <i class="fa-solid fa-eye"></i>
+                        </span>
                     </div>
                 </div>
 
-                <button type="submit" class="btn-submit">Entrar</button>
+                <button type="submit" class="btn-submit">Entrar na Conta</button>
             </form>
 
             <div class="footer-link">
-                Não tem uma conta? <a href="registro.html">Crie sua conta</a>
+                Ainda não é membro? <a href="registro.html">Criar Conta Elite</a>
             </div>
         </div>
     </div>

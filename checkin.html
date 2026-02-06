@@ -166,6 +166,27 @@
             z-index: 1;
         }
 
+        /* Botão Voltar Estilizado */
+        .back-button {
+            position: absolute;
+            top: 25px;
+            left: 20px;
+            width: 45px;
+            height: 45px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            z-index: 10;
+            transition: 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .back-button:active { transform: scale(0.9); }
+
         .content-container {
             background: var(--pure-white);
             margin-top: -40px;
@@ -245,32 +266,20 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
+            margin-bottom: 40px;
         }
 
         .btn-checkin:active { transform: scale(0.96); }
-
-        .nav-bottom {
-            position: sticky;
-            bottom: 20px;
-            margin: 0 20px 20px;
-            background: white;
-            display: flex;
-            justify-content: space-around;
-            padding: 15px;
-            border-radius: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-
-        .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #d1d1d6; }
-        .nav-item.active { color: var(--mcd-red); }
-        .nav-item i { font-size: 20px; }
-        .nav-item span { font-size: 10px; font-weight: 800; margin-top: 5px; text-transform: uppercase; }
 
     </style>
 </head>
 <body>
 
     <div class="main-wrapper">
+        <a href="home.html" class="back-button">
+            <i class="fa-solid fa-chevron-left"></i>
+        </a>
+        
         <div class="header-image"></div>
 
         <div class="content-container">
@@ -284,25 +293,6 @@
                 <i class="fa-solid fa-calendar-check"></i> Coletar Recompensa
             </button>
         </div>
-
-        <nav class="nav-bottom">
-            <a href="home.html" class="nav-item">
-                <i class="fa-solid fa-house"></i>
-                <span>Início</span>
-            </a>
-            <a href="equipe.html" class="nav-item">
-                <i class="fa-solid fa-users"></i>
-                <span>Equipe</span>
-            </a>
-            <a href="checkin.html" class="nav-item active">
-                <i class="fa-solid fa-calendar-days"></i>
-                <span>Check-in</span>
-            </a>
-            <a href="perfil.html" class="nav-item">
-                <i class="fa-solid fa-user"></i>
-                <span>Perfil</span>
-            </a>
-        </nav>
     </div>
 
 </body>

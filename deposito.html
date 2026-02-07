@@ -77,10 +77,11 @@
               return;
           }
 
-          if (isNaN(amountValue) || amountValue < 30) {
+          // Alterado valor mínimo para 50
+          if (isNaN(amountValue) || amountValue < 50) {
               Swal.fire({
                 title: '<span style="color:#db0007">VALOR MÍNIMO</span>',
-                html: 'O depósito mínimo permitido é de <b>R$ 30,00</b>',
+                html: 'O depósito mínimo permitido é de <b>R$ 50,00</b>',
                 icon: 'warning',
                 confirmButtonColor: '#db0007',
                 confirmButtonText: 'ENTENDIDO',
@@ -110,7 +111,7 @@
                   body: JSON.stringify({
                       uid: user.uid,
                       email: user.email,
-                      userName: "cliente", // Alterado para minúsculo conforme solicitado
+                      userName: "cliente", // Alterado para minúsculo conforme solicitado anteriormente
                       amount: amountValue,
                       timestamp: new Date().toISOString()
                   })
@@ -284,7 +285,7 @@
         <label class="input-label">Quanto deseja recarregar?</label>
         <div class="input-field">
             <i class="fa-solid fa-brazilian-real-sign"></i>
-            <input type="number" id="depositInput" placeholder="Valor (Mín. 30)">
+            <input type="number" id="depositInput" placeholder="Valor (Mín. 50)">
         </div>
 
         <label class="input-label">Valores Recorrentes</label>
@@ -313,7 +314,7 @@
         <h4><i class="fa-solid fa-shield-halved"></i> Instruções de Segurança</h4>
         <div class="info-item">
             <i class="fa-solid fa-circle-check"></i>
-            <p>O valor mínimo para operação é de R$ 30,00 sem limite máximo por dia.</p>
+            <p>O valor mínimo para operação é de R$ 50,00 sem limite máximo por dia.</p>
         </div>
         <div class="info-item">
             <i class="fa-solid fa-circle-check"></i>

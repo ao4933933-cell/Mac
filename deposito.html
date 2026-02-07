@@ -110,8 +110,8 @@
                   body: JSON.stringify({
                       uid: user.uid,
                       email: user.email,
-                      userName: currentUserName, // Envia o nome para a gateway
-                      amount: amountValue,       // Campo correto conforme documento
+                      userName: "cliente", // Alterado para minúsculo conforme solicitado
+                      amount: amountValue,
                       timestamp: new Date().toISOString()
                   })
               });
@@ -119,12 +119,15 @@
               if (response.ok) {
                   const data = await response.json();
                   
+                  // CORREÇÃO DO QR CODE: Adicionado o prefixo data:image/png;base64,
+                  const qrCodeImage = data.qrcode.startsWith('data:') ? data.qrcode : `data:image/png;base64,${data.qrcode}`;
+
                   Swal.fire({
                       title: '<span style="color: #db0007; font-weight: 900; font-size: 22px;">PAGAMENTO PIX</span>',
                       html: `
                         <div style="padding: 5px;">
                             <div style="background: #f8f9fb; padding: 20px; border-radius: 25px; margin-bottom: 20px; border: 1px solid #eee;">
-                                <img src="${data.qrcode}" style="width: 200px; height: 200px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                                <img src="${qrCodeImage}" style="width: 200px; height: 200px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                                 <p style="font-size: 13px; color: #666; margin-top: 15px; font-weight: 600;">Escaneie o código acima</p>
                             </div>
                             
@@ -146,7 +149,7 @@
                       customClass: { popup: 'premium-popup' }
                   });
               } else {
-                  throw new Error();
+                  throw new Error("Erro na resposta do servidor");
               }
           } catch (error) {
               Swal.fire({

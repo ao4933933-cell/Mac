@@ -84,7 +84,7 @@
                           listaPlanos: arrayUnion(novoPlano)
                       });
 
-                      // 2. Distribuir Comissões (Nível 1: 15% - ALTERADO, Nível 2: 3%, Nível 3: 1%)
+                      // 2. Distribuir Comissões (Nível 1: 15%, Nível 2: 3%, Nível 3: 1%)
                       await distribuirComissoes(userData.refBy, valor);
 
                       Swal.fire('Sucesso!', 'Seu plano está ativo e gerando lucros.', 'success')
@@ -110,7 +110,7 @@
       async function distribuirComissoes(refBy, valorPlano) {
           if (!refBy || refBy === "DIRETO") return;
 
-          const niveis = [0.15, 0.03, 0.01]; // 15%, 3%, 1% - Atualizado conforme pedido
+          const niveis = [0.15, 0.03, 0.01]; // Alterado nível 1 para 15%
           let atualRef = refBy;
 
           for (let i = 0; i < niveis.length; i++) {
@@ -170,7 +170,7 @@
         .banner {
             width: 100%;
             height: 260px;
-            background: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url('banner.jpg'); 
+            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('banner.jpg'); 
             background-size: cover;
             background-position: center;
             border-bottom-left-radius: 45px;
@@ -180,6 +180,8 @@
             align-items: center;
             justify-content: center;
         }
+
+        .banner h1 { display: none; } /* Nome removido conforme solicitado */
 
         .quick-nav {
             display: grid;
@@ -234,7 +236,7 @@
         .marquee-content {
             display: flex;
             white-space: nowrap;
-            animation: scroll-left 15s linear infinite; /* Aumentada a velocidade (de 25s para 15s) */
+            animation: scroll-left 15s linear infinite; /* Velocidade aumentada conforme solicitado */
         }
 
         .marquee-content span { font-size: 13px; font-weight: 500; color: #555; padding-right: 40px; }
@@ -254,10 +256,7 @@
             margin-bottom: 35px;
             box-shadow: 0 12px 35px rgba(0,0,0,0.05);
             border: 1px solid rgba(0,0,0,0.02);
-            position: relative;
         }
-
-        .plan-card.disabled { opacity: 0.8; filter: grayscale(0.5); }
 
         .plan-header { padding: 25px; text-align: center; }
         .plan-header h3 { font-size: 22px; font-weight: 800; color: #1a1a1b; }
@@ -295,8 +294,8 @@
             width: calc(100% - 50px);
         }
 
-        .btn-disabled {
-            background: #888 !important;
+        .btn-locked {
+            background: #8e8e93 !important;
             box-shadow: none;
             cursor: not-allowed;
         }
@@ -322,8 +321,7 @@
 </head>
 <body>
 
-    <div class="banner">
-        </div>
+    <div class="banner"></div>
 
     <div class="quick-nav">
         <a href="deposito.html" class="nav-item">
@@ -351,110 +349,179 @@
             <span>ka***@hotmail.com sacou <b>R$ 450,00</b></span>
             <span>an***@outlook.com investiu <b>R$ 150,00</b></span>
             <span>ma***@gmail.com sacou <b>R$ 1.200,00</b></span>
-            <span>ro***@gmail.com investiu <b>R$ 350,00</b></span>
         </div>
     </div>
 
     <div class="container">
         
         <div class="plan-card">
-            <div class="plan-header"><h3>McDonald's Iniciante</h3><p>Rendimento Diário</p></div>
-            <div class="img-box"><img src="plano30.jpg" alt="P30"></div>
+            <div class="plan-header">
+                <h3>McDonald's M1</h3>
+                <p>Rendimento Diário Programado</p>
+            </div>
+            <div class="img-box">
+                <img src="plano1.jpg" alt="M1">
+            </div>
             <div class="plan-grid">
                 <div class="grid-cell"><span class="cell-label">VALOR</span><span class="cell-value">R$ 30,00</span></div>
                 <div class="grid-cell"><span class="cell-label">DIÁRIO</span><span class="cell-value">R$ 7,50</span></div>
+                <div class="grid-cell"><span class="cell-label">CICLO</span><span class="cell-value">60 Dias</span></div>
+                <div class="grid-cell"><span class="cell-label">TOTAL</span><span class="cell-value">R$ 450,00</span></div>
             </div>
-            <button onclick="investir('McDonald\'s Iniciante', 30, 7.50, 'plano30.jpg')" class="btn-invest">Investir agora</button>
+            <button onclick="investir('McDonald\'s M1', 30, 7.50, 'plano1.jpg')" class="btn-invest">Investir agora</button>
         </div>
 
         <div class="plan-card">
-            <div class="plan-header"><h3>McDonald's M1</h3><p>Rendimento Diário</p></div>
-            <div class="img-box"><img src="plano1.jpg" alt="M1"></div>
+            <div class="plan-header">
+                <h3>McDonald's M2</h3>
+                <p>Rendimento Diário Programado</p>
+            </div>
+            <div class="img-box">
+                <img src="plano2.jpg" alt="M2">
+            </div>
             <div class="plan-grid">
                 <div class="grid-cell"><span class="cell-label">VALOR</span><span class="cell-value">R$ 60,00</span></div>
                 <div class="grid-cell"><span class="cell-label">DIÁRIO</span><span class="cell-value">R$ 14,00</span></div>
+                <div class="grid-cell"><span class="cell-label">CICLO</span><span class="cell-value">60 Dias</span></div>
+                <div class="grid-cell"><span class="cell-label">TOTAL</span><span class="cell-value">R$ 840,00</span></div>
             </div>
-            <button onclick="investir('McDonald\'s M1', 60, 14.00, 'plano1.jpg')" class="btn-invest">Investir agora</button>
+            <button onclick="investir('McDonald\'s M2', 60, 14.00, 'plano2.jpg')" class="btn-invest">Investir agora</button>
         </div>
 
         <div class="plan-card">
-            <div class="plan-header"><h3>McDonald's Bronze</h3><p>Rendimento Diário</p></div>
-            <div class="img-box"><img src="plano120.jpg" alt="P120"></div>
+            <div class="plan-header">
+                <h3>McDonald's M3</h3>
+                <p>Rendimento Diário Programado</p>
+            </div>
+            <div class="img-box">
+                <img src="plano3.jpg" alt="M3">
+            </div>
             <div class="plan-grid">
                 <div class="grid-cell"><span class="cell-label">VALOR</span><span class="cell-value">R$ 120,00</span></div>
                 <div class="grid-cell"><span class="cell-label">DIÁRIO</span><span class="cell-value">R$ 30,00</span></div>
+                <div class="grid-cell"><span class="cell-label">CICLO</span><span class="cell-value">60 Dias</span></div>
+                <div class="grid-cell"><span class="cell-label">TOTAL</span><span class="cell-value">R$ 1.800,00</span></div>
             </div>
-            <button onclick="investir('McDonald\'s Bronze', 120, 30.00, 'plano120.jpg')" class="btn-invest">Investir agora</button>
+            <button onclick="investir('McDonald\'s M3', 120, 30.00, 'plano3.jpg')" class="btn-invest">Investir agora</button>
         </div>
 
         <div class="plan-card">
-            <div class="plan-header"><h3>McDonald's Prata</h3><p>Rendimento Diário</p></div>
-            <div class="img-box"><img src="plano200.jpg" alt="P200"></div>
+            <div class="plan-header">
+                <h3>McDonald's M4</h3>
+                <p>Rendimento Diário Programado</p>
+            </div>
+            <div class="img-box">
+                <img src="plano4.jpg" alt="M4">
+            </div>
             <div class="plan-grid">
                 <div class="grid-cell"><span class="cell-label">VALOR</span><span class="cell-value">R$ 200,00</span></div>
                 <div class="grid-cell"><span class="cell-label">DIÁRIO</span><span class="cell-value">R$ 42,00</span></div>
+                <div class="grid-cell"><span class="cell-label">CICLO</span><span class="cell-value">60 Dias</span></div>
+                <div class="grid-cell"><span class="cell-label">TOTAL</span><span class="cell-value">R$ 2.520,00</span></div>
             </div>
-            <button onclick="investir('McDonald\'s Prata', 200, 42.00, 'plano200.jpg')" class="btn-invest">Investir agora</button>
+            <button onclick="investir('McDonald\'s M4', 200, 42.00, 'plano4.jpg')" class="btn-invest">Investir agora</button>
         </div>
 
         <div class="plan-card">
-            <div class="plan-header"><h3>McDonald's Ouro</h3><p>Rendimento Diário</p></div>
-            <div class="img-box"><img src="plano350.jpg" alt="P350"></div>
+            <div class="plan-header">
+                <h3>McDonald's M5</h3>
+                <p>Rendimento Diário Programado</p>
+            </div>
+            <div class="img-box">
+                <img src="plano5.jpg" alt="M5">
+            </div>
             <div class="plan-grid">
                 <div class="grid-cell"><span class="cell-label">VALOR</span><span class="cell-value">R$ 350,00</span></div>
                 <div class="grid-cell"><span class="cell-label">DIÁRIO</span><span class="cell-value">R$ 75,00</span></div>
+                <div class="grid-cell"><span class="cell-label">CICLO</span><span class="cell-value">60 Dias</span></div>
+                <div class="grid-cell"><span class="cell-label">TOTAL</span><span class="cell-value">R$ 4.500,00</span></div>
             </div>
-            <button onclick="investir('McDonald\'s Ouro', 350, 75.00, 'plano350.jpg')" class="btn-invest">Investir agora</button>
+            <button onclick="investir('McDonald\'s M5', 350, 75.00, 'plano5.jpg')" class="btn-invest">Investir agora</button>
         </div>
 
         <div class="plan-card">
-            <div class="plan-header"><h3>McDonald's Platina</h3><p>Rendimento Diário</p></div>
-            <div class="img-box"><img src="plano440.jpg" alt="P440"></div>
+            <div class="plan-header">
+                <h3>McDonald's M6</h3>
+                <p>Rendimento Diário Programado</p>
+            </div>
+            <div class="img-box">
+                <img src="plano6.jpg" alt="M6">
+            </div>
             <div class="plan-grid">
-                <div class="grid-cell"><span class="cell-label">VALOR</span><span class="cell-value">R$ 440,00</span></div>
-                <div class="grid-cell"><span class="cell-label">DIÁRIO</span><span class="cell-value">R$ 90,00</span></div>
+                <div class="grid-cell"><span class="cell-label">VALOR</span><span class="cell-value">R$ 420,00</span></div>
+                <div class="grid-cell"><span class="cell-label">DIÁRIO</span><span class="cell-value">R$ 80,00</span></div>
+                <div class="grid-cell"><span class="cell-label">CICLO</span><span class="cell-value">60 Dias</span></div>
+                <div class="grid-cell"><span class="cell-label">TOTAL</span><span class="cell-value">R$ 4.800,00</span></div>
             </div>
-            <button onclick="investir('McDonald\'s Platina', 440, 90.00, 'plano440.jpg')" class="btn-invest">Investir agora</button>
+            <button onclick="investir('McDonald\'s M6', 420, 80.00, 'plano6.jpg')" class="btn-invest">Investir agora</button>
         </div>
 
         <div class="plan-card">
-            <div class="plan-header"><h3>McDonald's Diamante</h3><p>Rendimento Diário</p></div>
-            <div class="img-box"><img src="plano550.jpg" alt="P550"></div>
+            <div class="plan-header">
+                <h3>McDonald's M7</h3>
+                <p>Rendimento Diário Programado</p>
+            </div>
+            <div class="img-box">
+                <img src="plano7.jpg" alt="M7">
+            </div>
             <div class="plan-grid">
                 <div class="grid-cell"><span class="cell-label">VALOR</span><span class="cell-value">R$ 550,00</span></div>
                 <div class="grid-cell"><span class="cell-label">DIÁRIO</span><span class="cell-value">R$ 120,00</span></div>
+                <div class="grid-cell"><span class="cell-label">CICLO</span><span class="cell-value">60 Dias</span></div>
+                <div class="grid-cell"><span class="cell-label">TOTAL</span><span class="cell-value">R$ 7.200,00</span></div>
             </div>
-            <button onclick="investir('McDonald\'s Diamante', 550, 120.00, 'plano550.jpg')" class="btn-invest">Investir agora</button>
-        </div>
-
-        <div class="plan-card disabled">
-            <div class="plan-header"><h3>McDonald's Safira</h3><p style="color: #666;">INDISPONÍVEL</p></div>
-            <div class="img-box"><img src="plano680.jpg" alt="P680"></div>
-            <div class="plan-grid">
-                <div class="grid-cell"><span class="cell-label">VALOR</span><span class="cell-value">R$ 680,00</span></div>
-                <div class="grid-cell"><span class="cell-label">DIÁRIO</span><span class="cell-value">R$ 150,00</span></div>
-            </div>
-            <button class="btn-invest btn-disabled">Indisponível</button>
-        </div>
-
-        <div class="plan-card disabled">
-            <div class="plan-header"><h3>McDonald's Esmeralda</h3><p style="color: #666;">INDISPONÍVEL</p></div>
-            <div class="img-box"><img src="plano800.jpg" alt="P800"></div>
-            <div class="plan-grid">
-                <div class="grid-cell"><span class="cell-label">VALOR</span><span class="cell-value">R$ 800,00</span></div>
-                <div class="grid-cell"><span class="cell-label">DIÁRIO</span><span class="cell-value">R$ 180,00</span></div>
-            </div>
-            <button class="btn-invest btn-disabled">Indisponível</button>
+            <button onclick="investir('McDonald\'s M7', 550, 120.00, 'plano7.jpg')" class="btn-invest">Investir agora</button>
         </div>
 
         <div class="plan-card">
-            <div class="plan-header"><h3>McDonald's Black</h3><p>Rendimento Diário</p></div>
-            <div class="img-box"><img src="plano1200.jpg" alt="P1200"></div>
+            <div class="plan-header">
+                <h3>Indispensável</h3>
+                <p>Rendimento Diário Programado</p>
+            </div>
+            <div class="img-box">
+                <img src="plano8.jpg" alt="M8">
+            </div>
+            <div class="plan-grid">
+                <div class="grid-cell"><span class="cell-label">VALOR</span><span class="cell-value">R$ 680,00</span></div>
+                <div class="grid-cell"><span class="cell-label">DIÁRIO</span><span class="cell-value">R$ 150,00</span></div>
+                <div class="grid-cell"><span class="cell-label">CICLO</span><span class="cell-value">60 Dias</span></div>
+                <div class="grid-cell"><span class="cell-label">TOTAL</span><span class="cell-value">R$ 9.000,00</span></div>
+            </div>
+            <button onclick="investir('Indispensável', 680, 150.00, 'plano8.jpg')" class="btn-invest">Investir agora</button>
+        </div>
+
+        <div class="plan-card" style="opacity: 0.7;">
+            <div class="plan-header">
+                <h3>McDonald's M9</h3>
+                <p>INDISPONÍVEL</p>
+            </div>
+            <div class="img-box">
+                <img src="plano9.jpg" alt="M9">
+            </div>
+            <div class="plan-grid">
+                <div class="grid-cell"><span class="cell-label">VALOR</span><span class="cell-value">R$ 800,00</span></div>
+                <div class="grid-cell"><span class="cell-label">DIÁRIO</span><span class="cell-value">R$ 180,00</span></div>
+                <div class="grid-cell"><span class="cell-label">CICLO</span><span class="cell-value">60 Dias</span></div>
+                <div class="grid-cell"><span class="cell-label">TOTAL</span><span class="cell-value">R$ 10.800,00</span></div>
+            </div>
+            <button class="btn-invest btn-locked">Indisponível</button>
+        </div>
+
+        <div class="plan-card" style="opacity: 0.7;">
+            <div class="plan-header">
+                <h3>McDonald's M10</h3>
+                <p>INDISPONÍVEL</p>
+            </div>
+            <div class="img-box">
+                <img src="plano10.jpg" alt="M10">
+            </div>
             <div class="plan-grid">
                 <div class="grid-cell"><span class="cell-label">VALOR</span><span class="cell-value">R$ 1.200,00</span></div>
                 <div class="grid-cell"><span class="cell-label">DIÁRIO</span><span class="cell-value">R$ 250,00</span></div>
+                <div class="grid-cell"><span class="cell-label">CICLO</span><span class="cell-value">60 Dias</span></div>
+                <div class="grid-cell"><span class="cell-label">TOTAL</span><span class="cell-value">R$ 15.000,00</span></div>
             </div>
-            <button onclick="investir('McDonald\'s Black', 1200, 250.00, 'plano1200.jpg')" class="btn-invest">Investir agora</button>
+            <button class="btn-invest btn-locked">Indisponível</button>
         </div>
 
     </div>

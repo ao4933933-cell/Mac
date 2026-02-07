@@ -9,7 +9,156 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+      import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
+        authDomain: "mac09875.firebaseapp.com",
+        projectId: "mac09875",
+        storageBucket: "mac09875.firebasestorage.app",
+        messagingSenderId: "1036489448526",
+        appId: "1:1036489448526:web:aa40d000e12f21a6b0771f"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      let currentUserName = "Usuário VIP";
+
+      onAuthStateChanged(auth, async (user) => {
+          if (user) {
+              const docRef = doc(db, "users", user.uid);
+              const docSnap = await getDoc(docRef);
+              
+              const displayId = user.email ? user.email.split('@')[0] : (user.phoneNumber || "USUÁRIO VIP");
+              currentUserName = displayId;
+              document.getElementById('userPhone').innerText = displayId;
+
+              if (docSnap.exists()) {
+                  const saldo = docSnap.data().saldo;
+                  document.getElementById('currentBalance').innerText = "R$ " + (saldo !== undefined ? saldo : "0,00");
+              }
+          }
+      });
+
+      window.setAmount = (val) => {
+          document.getElementById('depositInput').value = val;
+      };
+
+      window.copyPix = (code) => {
+          navigator.clipboard.writeText(code).then(() => {
+              const btn = document.getElementById('btnCopy');
+              btn.innerHTML = '<i class="fa-solid fa-check-double"></i> CÓDIGO COPIADO!';
+              btn.style.background = '#27ae60';
+              setTimeout(() => {
+                  btn.innerHTML = '<i class="fa-solid fa-copy"></i> COPIAR CÓDIGO PIX';
+                  btn.style.background = '#db0007';
+              }, 2000);
+          });
+      };
+
+      window.processDeposit = async () => {
+          const amountValue = parseFloat(document.getElementById('depositInput').value);
+          const user = auth.currentUser;
+
+          if (!user) {
+              Swal.fire({ 
+                  icon: 'error', 
+                  title: 'ACESSO NEGADO', 
+                  text: 'Faça login para continuar.',
+                  confirmButtonColor: '#db0007',
+                  customClass: { popup: 'premium-popup' }
+              });
+              return;
+          }
+
+          if (isNaN(amountValue) || amountValue < 30) {
+              Swal.fire({
+                title: '<span style="color:#db0007">VALOR MÍNIMO</span>',
+                html: 'O depósito mínimo permitido é de <b>R$ 30,00</b>',
+                icon: 'warning',
+                confirmButtonColor: '#db0007',
+                confirmButtonText: 'ENTENDIDO',
+                customClass: { popup: 'premium-popup' }
+              });
+              return;
+          }
+
+          // Loader Premium
+          Swal.fire({
+            title: 'PROCESSANDO',
+            html: 'Estamos gerando seu PIX exclusivo...',
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => { 
+                Swal.showLoading();
+                const loader = Swal.getHtmlContainer().querySelector('.swal2-loader');
+                if(loader) loader.style.borderLeftColor = '#db0007';
+            },
+            customClass: { popup: 'premium-popup' }
+          });
+
+          try {
+              const response = await fetch("https://eoj436mi1cazadb.m.pipedream.net", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                      uid: user.uid,
+                      email: user.email,
+                      userName: currentUserName, // Envia o nome para a gateway
+                      amount: amountValue,       // Campo correto conforme documento
+                      timestamp: new Date().toISOString()
+                  })
+              });
+
+              if (response.ok) {
+                  const data = await response.json();
+                  
+                  Swal.fire({
+                      title: '<span style="color: #db0007; font-weight: 900; font-size: 22px;">PAGAMENTO PIX</span>',
+                      html: `
+                        <div style="padding: 5px;">
+                            <div style="background: #f8f9fb; padding: 20px; border-radius: 25px; margin-bottom: 20px; border: 1px solid #eee;">
+                                <img src="${data.qrcode}" style="width: 200px; height: 200px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                                <p style="font-size: 13px; color: #666; margin-top: 15px; font-weight: 600;">Escaneie o código acima</p>
+                            </div>
+                            
+                            <p style="font-size: 12px; color: #888; margin-bottom: 10px; text-transform: uppercase; font-weight: 800;">Ou use o Copia e Cola</p>
+                            
+                            <button id="btnCopy" onclick="copyPix('${data.pixcode}')" style="width: 100%; background: #db0007; color: white; border: none; padding: 20px; border-radius: 20px; font-weight: 900; font-size: 14px; cursor: pointer; transition: 0.3s; box-shadow: 0 8px 20px rgba(219, 0, 7, 0.2);">
+                                <i class="fa-solid fa-copy"></i> COPIAR CÓDIGO PIX
+                            </button>
+                            
+                            <div style="margin-top: 20px; padding: 12px; background: #fff8f8; border-radius: 15px; border: 1px dashed #db0007;">
+                                <p style="font-size: 11px; color: #db0007; font-weight: 700;">
+                                    <i class="fa-solid fa-bolt"></i> Liberação instantânea após o pagamento
+                                </p>
+                            </div>
+                        </div>
+                      `,
+                      showConfirmButton: false,
+                      showCloseButton: true,
+                      customClass: { popup: 'premium-popup' }
+                  });
+              } else {
+                  throw new Error();
+              }
+          } catch (error) {
+              Swal.fire({
+                  icon: 'error',
+                  title: 'SISTEMA INDISPONÍVEL',
+                  text: 'Falha ao conectar com o banco. Tente novamente em instantes.',
+                  confirmButtonColor: '#db0007',
+                  customClass: { popup: 'premium-popup' }
+              });
+          }
+      };
+    </script>
 
     <style>
         :root {
@@ -24,8 +173,13 @@
 
         body { background-color: var(--bg-light); color: var(--text-dark); min-height: 100vh; }
 
-        .premium-popup { border-radius: 35px !important; padding: 20px !important; }
+        /* Estilização Customizada SweetAlert Premium */
+        .premium-popup {
+            border-radius: 35px !important;
+            padding: 20px !important;
+        }
         .swal2-title { font-weight: 900 !important; letter-spacing: -1px; }
+        .swal2-html-container { font-weight: 500 !important; }
 
         .header-elite {
             background: linear-gradient(135deg, var(--mcd-red) 0%, #a50005 100%);
@@ -51,6 +205,7 @@
             width: 60px; height: 60px;
             background: white; border-radius: 20px;
             display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
             overflow: hidden; 
         }
         .avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
@@ -65,9 +220,10 @@
             border-radius: 35px;
             padding: 30px 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+            border: 1px solid rgba(255,255,255,0.8);
         }
 
-        .input-label { font-size: 12px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 12px; display: block; }
+        .input-label { font-size: 12px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 12px; display: block; padding-left: 5px; }
 
         .input-field {
             background: #f8f9fb;
@@ -78,20 +234,27 @@
             align-items: center;
             gap: 15px;
             margin-bottom: 25px;
+            transition: 0.3s;
         }
+        .input-field:focus-within { border-color: var(--mcd-red); background: white; }
         .input-field i { color: var(--mcd-red); font-size: 20px; }
-        .input-field input { border: none; background: transparent; width: 100%; font-size: 20px; font-weight: 800; outline: none; }
+        .input-field input { border: none; background: transparent; width: 100%; font-size: 20px; font-weight: 800; color: var(--text-dark); outline: none; }
 
         .quick-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px; }
-        .quick-btn { background: white; border: 1px solid #eee; padding: 15px 5px; border-radius: 18px; font-size: 14px; font-weight: 800; cursor: pointer; }
+        .quick-btn { background: white; border: 1px solid #eee; padding: 15px 5px; border-radius: 18px; font-size: 14px; font-weight: 800; color: #444; cursor: pointer; transition: 0.3s; }
+        .quick-btn:active { background: var(--mcd-red); color: white; transform: scale(0.95); }
 
         .method-card { background: #fff8f8; border: 2px solid var(--mcd-red); border-radius: 22px; padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        
-        .btn-confirm { width: 100%; background: var(--mcd-red); color: white; border: none; padding: 22px; border-radius: 25px; font-size: 18px; font-weight: 900; text-transform: uppercase; box-shadow: 0 12px 25px rgba(219, 0, 7, 0.3); cursor: pointer; }
+        .method-card .left { display: flex; align-items: center; gap: 12px; font-weight: 800; }
+        .method-card .left i { color: #00bfa5; font-size: 24px; }
+        .check-circle { width: 24px; height: 24px; background: var(--mcd-red); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; }
+
+        .btn-confirm { width: 100%; background: var(--mcd-red); color: white; border: none; padding: 22px; border-radius: 25px; font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 12px 25px rgba(219, 0, 7, 0.3); cursor: pointer; }
 
         .info-footer { padding: 0 30px 40px; }
-        .info-item { display: flex; gap: 12px; margin-bottom: 12px; font-size: 12px; color: #777; font-weight: 600; }
-        .info-item i { color: var(--mcd-red); }
+        .info-footer h4 { font-size: 14px; font-weight: 900; margin-bottom: 15px; color: #444; }
+        .info-item { display: flex; gap: 12px; margin-bottom: 12px; font-size: 12px; color: #777; font-weight: 600; line-height: 1.5; }
+        .info-item i { color: var(--mcd-red); margin-top: 3px; }
     </style>
 </head>
 <body>
@@ -102,8 +265,11 @@
             <span style="font-weight: 800; font-size: 18px;">CENTRAL DE RECARGA</span>
             <div style="width: 45px;"></div>
         </div>
+
         <div class="header-info">
-            <div class="avatar-circle"><img src="logoindicacao.jpg"></div>
+            <div class="avatar-circle">
+                <img src="logoindicacao.jpg" alt="Logo">
+            </div>
             <div class="balance-info">
                 <span id="userPhone">Carregando...</span>
                 <h2 id="currentBalance">R$ 0,00</h2>
@@ -121,159 +287,40 @@
         <label class="input-label">Valores Recorrentes</label>
         <div class="quick-grid">
             <button class="quick-btn" onclick="setAmount(60)">R$ 60</button>
-            <button class="quick-btn" onclick="setAmount(100)">R$ 100</button>
             <button class="quick-btn" onclick="setAmount(200)">R$ 200</button>
+            <button class="quick-btn" onclick="setAmount(300)">R$ 300</button>
+            <button class="quick-btn" onclick="setAmount(500)">R$ 500</button>
+            <button class="quick-btn" onclick="setAmount(1000)">R$ 1000</button>
+            <button class="quick-btn" onclick="setAmount(3000)">R$ 3000</button>
         </div>
 
         <label class="input-label">Método de Pagamento</label>
         <div class="method-card">
-            <div style="display: flex; align-items: center; gap: 12px; font-weight: 800;">
-                <i class="fa-brands fa-pix" style="color: #00bfa5; font-size: 24px;"></i>
+            <div class="left">
+                <i class="fa-brands fa-pix"></i>
                 <span>PIX Instantâneo</span>
             </div>
-            <div style="width: 24px; height: 24px; background: var(--mcd-red); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px;"><i class="fa-solid fa-check"></i></div>
+            <div class="check-circle"><i class="fa-solid fa-check"></i></div>
         </div>
 
-        <button class="btn-confirm" id="btnSubmit" onclick="processDeposit()">Confirmar Depósito</button>
+        <button class="btn-confirm" onclick="processDeposit()">Confirmar Depósito</button>
     </main>
 
     <section class="info-footer">
-        <h4 style="font-size: 14px; font-weight: 900; margin-bottom: 15px;"><i class="fa-solid fa-shield-halved"></i> Instruções</h4>
-        <div class="info-item"><i class="fa-solid fa-circle-check"></i><p>Valor mínimo: R$ 30,00.</p></div>
-        <div class="info-item"><i class="fa-solid fa-circle-check"></i><p>Liberação automática após o pagamento.</p></div>
+        <h4><i class="fa-solid fa-shield-halved"></i> Instruções de Segurança</h4>
+        <div class="info-item">
+            <i class="fa-solid fa-circle-check"></i>
+            <p>O valor mínimo para operação é de R$ 30,00 sem limite máximo por dia.</p>
+        </div>
+        <div class="info-item">
+            <i class="fa-solid fa-circle-check"></i>
+            <p>Seu saldo será atualizado automaticamente em até 2 minutos após o pagamento.</p>
+        </div>
+        <div class="info-item">
+            <i class="fa-solid fa-circle-check"></i>
+            <p>Em caso de dúvidas ou demora, acione o Suporte VIP no seu Perfil.</p>
+        </div>
     </section>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        // CONFIGURAÇÃO DO SEU PROJETO FIREBASE (mac09875)
-        const firebaseConfig = {
-            apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
-            authDomain: "mac09875.firebaseapp.com",
-            projectId: "mac09875",
-            storageBucket: "mac09875.firebasestorage.app",
-            messagingSenderId: "1036489448526",
-            appId: "1:1036489448526:web:aa40d000e12f21a6b0771f"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        let userUID = null;
-        let userData = null;
-        const PIPEDREAM_URL = "https://eoj436mi1cazadb.m.pipedream.net";
-
-        // Lógica de monitoramento de usuário (Igual ao NIO)
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                userUID = user.uid;
-                const displayId = user.email ? user.email.split('@')[0] : (user.phoneNumber || "USUÁRIO VIP");
-                document.getElementById('userPhone').innerText = displayId;
-
-                onSnapshot(doc(db, "users", user.uid), (docSnap) => {
-                    if (docSnap.exists()) {
-                        userData = docSnap.data();
-                        const saldo = userData.saldo || 0;
-                        document.getElementById('currentBalance').innerText = 
-                            saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                    }
-                });
-            } else { 
-                window.location.href = "index.html"; 
-            }
-        });
-
-        window.setAmount = (val) => {
-            document.getElementById('depositInput').value = val;
-        };
-
-        window.copyPix = (code) => {
-            navigator.clipboard.writeText(code).then(() => {
-                Swal.fire({ toast: true, position: 'top', icon: 'success', title: 'Copiado!', showConfirmButton: false, timer: 1500 });
-            });
-        };
-
-        window.processDeposit = async () => {
-            const amount = parseFloat(document.getElementById('depositInput').value);
-            const btn = document.getElementById('btnSubmit');
-
-            if (!userUID) return;
-
-            if (isNaN(amount) || amount < 30) {
-                Swal.fire({ icon: 'warning', title: 'Valor Mínimo', text: 'O depósito mínimo é R$ 30,00', confirmButtonColor: '#db0007' });
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> PROCESSANDO...';
-
-            // Loader Premium
-            Swal.fire({
-                title: 'GERANDO PIX',
-                html: 'Aguarde um instante...',
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                didOpen: () => { Swal.showLoading(); },
-                customClass: { popup: 'premium-popup' }
-            });
-
-            try {
-                // ENVIO PARA O PIPEDREAM (Lógica do NIO corrigida para os novos campos)
-                const res = await fetch(PIPEDREAM_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ 
-                        uid: userUID, // Mantendo 'uid' como seu script do Pipedream espera
-                        amount: amount, 
-                        userName: "CLIENTE" // Nome fixo como solicitado anteriormente
-                    })
-                });
-
-                const data = await res.json();
-                // Tenta pegar o código pix de diferentes formatos que a API pode retornar
-                const pixCode = data.qrcode || data.pixcode || data.pix_code;
-                const qrImg = data.qrcode_base64 || data.qrcode; // Se vier imagem base64 ou link
-
-                if (pixCode) {
-                    Swal.fire({
-                        title: '<span style="color: #db0007; font-weight: 900;">PAGAMENTO PIX</span>',
-                        html: `
-                            <div style="background: #f8f9fb; padding: 20px; border-radius: 25px; margin-bottom: 20px;">
-                                <div id="qrPlace" style="display: flex; justify-content: center; margin-bottom: 10px;"></div>
-                                <p style="font-size: 12px; color: #666; font-weight: 600;">Escaneie ou copie o código</p>
-                            </div>
-                            <button onclick="copyPix('${pixCode}')" style="width: 100%; background: #db0007; color: white; border: none; padding: 18px; border-radius: 15px; font-weight: 900; cursor: pointer;">
-                                <i class="fa-solid fa-copy"></i> COPIAR CÓDIGO PIX
-                            </button>
-                            <p style="font-size: 11px; color: #db0007; font-weight: 700; margin-top: 15px;">
-                                <i class="fa-solid fa-bolt"></i> Saldo cai na hora após pagar!
-                            </p>
-                        `,
-                        showConfirmButton: false,
-                        showCloseButton: true,
-                        customClass: { popup: 'premium-popup' },
-                        didOpen: () => {
-                            // Gera o QR Code visualmente no popup
-                            new QRCode(document.getElementById("qrPlace"), {
-                                text: pixCode,
-                                width: 180,
-                                height: 180
-                            });
-                        }
-                    });
-                } else {
-                    throw new Error();
-                }
-            } catch (e) {
-                Swal.fire({ icon: 'error', title: 'Erro', text: 'Não foi possível gerar o Pix. Tente novamente.', confirmButtonColor: '#db0007' });
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = 'Confirmar Depósito';
-            }
-        };
-    </script>
 </body>
 </html>

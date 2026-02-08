@@ -29,7 +29,7 @@
       const db = getFirestore(app);
 
       let userSaldo = 0;
-      let selectedKeyType = 'cpf'; // Valor padrão
+      let selectedKeyType = 'cpf';
 
       onAuthStateChanged(auth, async (user) => {
           if (user) {
@@ -44,7 +44,6 @@
           }
       });
 
-      // Função para trocar o tipo de chave visualmente
       window.setKeyType = (type) => {
           selectedKeyType = type;
           document.querySelectorAll('.type-option').forEach(opt => opt.classList.remove('active'));
@@ -58,7 +57,6 @@
           }
       };
 
-      // Cálculo de Imposto em tempo real
       window.updateWithdrawInfo = () => {
           const val = parseFloat(document.getElementById('withdrawInput').value) || 0;
           const tax = val * 0.12;
@@ -71,25 +69,62 @@
           const amount = parseFloat(document.getElementById('withdrawInput').value);
           const pixKey = document.getElementById('pixKey').value;
 
-          if (isNaN(amount) || amount < 20) {
-              Swal.fire({ icon: 'error', title: 'Valor Mínimo', text: 'O valor mínimo para saque é R$ 20,00', confirmButtonColor: '#db0007' });
+          // Verificação de Horário (10h às 17h)
+          const agora = new Date();
+          const hora = agora.getHours();
+          if (hora < 10 || hora >= 17) {
+              Swal.fire({
+                  title: '<span style="font-size: 18px; color: #db0007; font-weight: 800;">HORÁRIO INDISPONÍVEL</span>',
+                  html: '<p style="font-size: 13px; color: #666;">Os saques funcionam apenas das <b>10:00 às 17:00</b>.</p>',
+                  icon: 'warning',
+                  confirmButtonText: 'ENTENDIDO',
+                  confirmButtonColor: '#db0007',
+                  customClass: { popup: 'premium-swal-popup', confirmButton: 'premium-swal-confirm' }
+              });
+              return;
+          }
+
+          if (isNaN(amount) || amount < 35) {
+              Swal.fire({
+                  title: '<span style="font-size: 18px; color: #db0007; font-weight: 800;">VALOR MÍNIMO</span>',
+                  html: '<p style="font-size: 13px; color: #666;">O valor mínimo para saque é de <b>R$ 35,00</b>.</p>',
+                  icon: 'error',
+                  confirmButtonText: 'OK',
+                  confirmButtonColor: '#db0007',
+                  customClass: { popup: 'premium-swal-popup', confirmButton: 'premium-swal-confirm' }
+              });
               return;
           }
 
           if (amount > userSaldo) {
-              Swal.fire({ icon: 'error', title: 'Saldo Insuficiente', text: 'Você não possui saldo suficiente para este saque.', confirmButtonColor: '#db0007' });
+              Swal.fire({
+                  title: '<span style="font-size: 18px; color: #db0007; font-weight: 800;">SALDO INSUFICIENTE</span>',
+                  html: '<p style="font-size: 13px; color: #666;">Você não possui saldo suficiente para esta operação.</p>',
+                  icon: 'error',
+                  confirmButtonText: 'VOLTAR',
+                  confirmButtonColor: '#db0007',
+                  customClass: { popup: 'premium-swal-popup', confirmButton: 'premium-swal-confirm' }
+              });
               return;
           }
 
           if (!pixKey || pixKey.length < 5) {
-              Swal.fire({ icon: 'warning', title: 'Chave PIX', text: 'Por favor, insira uma chave PIX válida.', confirmButtonColor: '#db0007' });
+              Swal.fire({
+                  title: '<span style="font-size: 18px; color: #db0007; font-weight: 800;">CHAVE INVÁLIDA</span>',
+                  html: '<p style="font-size: 13px; color: #666;">Por favor, informe uma chave PIX correta.</p>',
+                  icon: 'warning',
+                  confirmButtonText: 'CORRIGIR',
+                  confirmButtonColor: '#db0007',
+                  customClass: { popup: 'premium-swal-popup', confirmButton: 'premium-swal-confirm' }
+              });
               return;
           }
 
           Swal.fire({
-            title: 'Processando Saque',
-            text: 'Aguarde a verificação do sistema...',
+            title: 'PROCESSANDO...',
+            html: '<p style="font-size: 13px; color: #666;">Verificando dados bancários...</p>',
             allowOutsideClick: false,
+            customClass: { popup: 'premium-swal-popup' },
             didOpen: () => { Swal.showLoading(); }
           });
 
@@ -103,13 +138,15 @@
 
               Swal.fire({
                 icon: 'success',
-                title: 'Pedido Enviado!',
-                text: 'Seu saque será creditado em sua conta em até 2 horas.',
-                confirmButtonColor: '#db0007'
+                title: '<span style="font-size: 18px; color: #27ae60;">PEDIDO ENVIADO!</span>',
+                html: '<p style="font-size: 13px; color: #666;">Seu saque será creditado em sua conta em breve.</p>',
+                confirmButtonColor: '#27ae60',
+                confirmButtonText: 'EXCELENTE',
+                customClass: { popup: 'premium-swal-popup', confirmButton: 'premium-swal-confirm' }
               }).then(() => { window.location.reload(); });
 
           } catch (error) {
-              Swal.fire({ icon: 'error', title: 'Erro', text: 'Falha ao processar saque. Tente novamente.' });
+              Swal.fire({ icon: 'error', title: 'ERRO', text: 'Falha ao processar saque. Tente novamente.' });
           }
       };
     </script>
@@ -126,6 +163,20 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; -webkit-tap-highlight-color: transparent; }
 
         body { background-color: var(--bg-light); color: var(--text-dark); min-height: 100vh; padding-bottom: 40px; }
+
+        /* Estilos SWAL Premium e Compacto */
+        .premium-swal-popup {
+            width: 300px !important;
+            border-radius: 25px !important;
+            padding: 15px !important;
+        }
+        .premium-swal-confirm {
+            width: 100% !important;
+            border-radius: 15px !important;
+            font-weight: 800 !important;
+            font-size: 14px !important;
+            padding: 12px !important;
+        }
 
         .header-withdraw {
             background: linear-gradient(135deg, var(--mcd-red) 0%, #a50005 100%);
@@ -157,7 +208,6 @@
         .input-group { margin-bottom: 22px; }
         .input-label { font-size: 11px; font-weight: 800; color: #888; text-transform: uppercase; margin-bottom: 12px; display: block; padding-left: 5px; }
 
-        /* Estilo Elite para os Seletores de Chave */
         .key-type-selector {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -283,7 +333,7 @@
             <label class="input-label">Valor do Saque</label>
             <div class="input-field">
                 <i class="fa-solid fa-brazilian-real-sign" style="color: var(--mcd-red);"></i>
-                <input type="number" id="withdrawInput" placeholder="Mínimo 20.00" oninput="updateWithdrawInfo()">
+                <input type="number" id="withdrawInput" placeholder="Mínimo 35.00" oninput="updateWithdrawInfo()">
             </div>
         </div>
 
@@ -300,7 +350,7 @@
         
         <div class="rule-item">
             <span class="rule-number">01.</span>
-            <p>O valor mínimo para realizar o saque é de R$ 20,00.</p>
+            <p>O valor mínimo para realizar o saque é de R$ 35,00.</p>
         </div>
         <div class="rule-item">
             <span class="rule-number">02.</span>

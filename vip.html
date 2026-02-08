@@ -43,10 +43,12 @@
           if (!userData) return;
           document.getElementById('displayBonus').innerText = "R$ " + (userData.lucro || 0).toFixed(2).replace('.', ',');
           
-          // Lógica de Renderização de Missões (Exemplo de Progresso)
+          // Lógica de Renderização de Missões (Exemplo de Progresso Mestre 1)
           const planosAtivos = userData.planosAtivos || 0;
           const progressPlanos = (planosAtivos / 3) * 100;
-          document.getElementById('progMestre1').style.width = Math.min(progressPlanos, 100) + "%";
+          if(document.getElementById('progMestre1')) {
+              document.getElementById('progMestre1').style.width = Math.min(progressPlanos, 100) + "%";
+          }
       }
 
       onAuthStateChanged(auth, async (user) => {
@@ -62,22 +64,37 @@
           }
       });
 
-      window.claimMission = async (missionId, requirement, reward, type) => {
+      window.claimMission = async (missionId, reqObj, reward) => {
           const user = auth.currentUser;
           if (!user || !userData) return;
 
           // Verificar se já resgatou
           if (userData.missoesResgatadas && userData.missoesResgatadas.includes(missionId)) {
-              Toast.fire({ icon: 'error', title: 'Você já resgatou este bônus!' });
+              Swal.fire({
+                  title: '<span style="font-size: 18px; color: #db0007; font-weight: 800;">AVISO</span>',
+                  html: '<p style="font-size: 13px; color: #666;">Você já resgatou este bônus anteriormente.</p>',
+                  icon: 'info',
+                  confirmButtonText: 'ENTENDIDO',
+                  confirmButtonColor: '#db0007',
+                  customClass: { popup: 'premium-swal-popup', confirmButton: 'premium-swal-confirm' }
+              });
               return;
           }
 
           let reached = false;
-          // Lógica de validação baseada no tipo de missão
-          if (type === 'planos' && (userData.planosAtivos || 0) >= requirement) reached = true;
-          if (type === 'recargaEquipe' && (userData.recargaEquipe || 0) >= requirement) reached = true;
-          if (type === 'convites' && (userData.tamanhoEquipe || 0) >= requirement) reached = true;
-          if (type === 'm2' && userData.temM2 === true) reached = true;
+          const type = reqObj.type;
+
+          // Lógica de validação avançada
+          if (type === 'planos' && (userData.planosAtivos || 0) >= reqObj.planos) reached = true;
+          if (type === 'm3' && userData.temM3 === true) reached = true;
+          if (type === 'recargaEquipe' && (userData.recargaEquipe || 0) >= reqObj.valor) reached = true;
+          
+          // Missões Híbridas (Convites + Investidores)
+          if (type === 'expansao') {
+              const convites = userData.tamanhoEquipe || 0;
+              const investidores = userData.investidoresDiretos || 0; // Certifique-se de ter esse campo no DB
+              if (convites >= reqObj.convites && investidores >= reqObj.investidores) reached = true;
+          }
 
           if (reached) {
               try {
@@ -89,20 +106,25 @@
                   
                   Swal.fire({
                       icon: 'success',
-                      title: 'BÔNUS RESGATADO!',
-                      text: `R$ ${reward.toFixed(2)} foram adicionados ao seu lucro.`,
-                      confirmButtonColor: '#db0007'
+                      title: '<span style="font-size: 18px; color: #27ae60;">BÔNUS RESGATADO!</span>',
+                      html: `<p style="font-size: 13px; color: #666;">R$ ${reward.toFixed(2)} foram adicionados ao seu lucro.</p>`,
+                      confirmButtonColor: '#27ae60',
+                      confirmButtonText: 'EXCELENTE',
+                      customClass: { popup: 'premium-swal-popup', confirmButton: 'premium-swal-confirm' }
                   }).then(() => location.reload());
 
               } catch (e) {
+                  console.error(e);
                   Toast.fire({ icon: 'error', title: 'Erro ao processar resgate.' });
               }
           } else {
               Swal.fire({
+                  title: '<span style="font-size: 18px; color: #888; font-weight: 800;">BLOQUEADO</span>',
+                  html: '<p style="font-size: 13px; color: #666;">Você ainda não completou os requisitos desta missão.</p>',
                   icon: 'lock',
-                  title: 'MISSÃO BLOQUEADA',
-                  text: 'Você ainda não atingiu os requisitos necessários para este bônus.',
-                  confirmButtonColor: '#888'
+                  confirmButtonText: 'VOLTAR',
+                  confirmButtonColor: '#888',
+                  customClass: { popup: 'premium-swal-popup', confirmButton: 'premium-swal-confirm' }
               });
           }
       };
@@ -134,6 +156,20 @@
         }
 
         body { padding-bottom: 120px; }
+
+        /* Estilos SWAL Premium */
+        .premium-swal-popup {
+            width: 300px !important;
+            border-radius: 25px !important;
+            padding: 15px !important;
+        }
+        .premium-swal-confirm {
+            width: 100% !important;
+            border-radius: 15px !important;
+            font-weight: 800 !important;
+            font-size: 14px !important;
+            padding: 12px !important;
+        }
 
         .vip-banner {
             width: 100%;
@@ -232,7 +268,6 @@
             cursor: pointer;
         }
 
-        /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
             bottom: 25px; left: 20px; right: 20px;
@@ -278,18 +313,18 @@
                 <div class="reward">+ R$ 20,00</div>
             </div>
             <div class="progress-container"><div class="progress-bar" id="progMestre1" style="width: 0%;"></div></div>
-            <button class="btn-claim" onclick="claimMission('mestre1', 3, 20, 'planos')">Resgatar Bônus</button>
+            <button class="btn-claim" onclick="claimMission('mestre1', {type: 'planos', planos: 3}, 20)">Resgatar Bônus</button>
         </div>
 
         <div class="task-card">
             <div class="task-top">
                 <div class="task-info">
                     <div class="task-icon"><i class="fa-solid fa-wallet"></i></div>
-                    <div class="task-text"><h4>Investidor M2</h4><p>Adquira 1 plano McDonald's M2</p></div>
+                    <div class="task-text"><h4>Investidor M3</h4><p>Adquira 1 plano McDonald's M3</p></div>
                 </div>
-                <div class="reward">+ R$ 35,00</div>
+                <div class="reward">+ R$ 20,00</div>
             </div>
-            <button class="btn-claim" onclick="claimMission('investM2', 1, 35, 'm2')">Resgatar Bônus</button>
+            <button class="btn-claim" onclick="claimMission('investM3', {type: 'm3'}, 20)">Resgatar Bônus</button>
         </div>
 
         <div class="task-card">
@@ -300,7 +335,7 @@
                 </div>
                 <div class="reward">+ R$ 80,00</div>
             </div>
-            <button class="btn-claim" onclick="claimMission('mestre2', 7, 80, 'planos')">Resgatar Bônus</button>
+            <button class="btn-claim" onclick="claimMission('mestre2', {type: 'planos', planos: 7}, 80)">Resgatar Bônus</button>
         </div>
 
         <div class="section-header">Expansão de Rede</div>
@@ -309,11 +344,11 @@
             <div class="task-top">
                 <div class="task-info">
                     <div class="task-icon"><i class="fa-solid fa-user-plus"></i></div>
-                    <div class="task-text"><h4>Recrutador Bronze</h4><p>20 Convites Totais</p></div>
+                    <div class="task-text"><h4>Recrutador Bronze</h4><p>20 Convites e 5 Investidores</p></div>
                 </div>
                 <div class="reward">+ R$ 15,00</div>
             </div>
-            <button class="btn-claim" onclick="claimMission('recBronze', 20, 15, 'convites')">Resgatar Bônus</button>
+            <button class="btn-claim" onclick="claimMission('recBronze', {type: 'expansao', convites: 20, investidores: 5}, 15)">Resgatar Bônus</button>
         </div>
 
         <div class="task-card">
@@ -321,23 +356,23 @@
                 <div class="task-info">
                     <div class="task-info">
                         <div class="task-icon"><i class="fa-solid fa-medal"></i></div>
-                        <div class="task-text"><h4>Recrutador Prata</h4><p>50 Convites Totais</p></div>
+                        <div class="task-text"><h4>Recrutador Prata</h4><p>50 Convites e 15 Investidores</p></div>
                     </div>
                 </div>
                 <div class="reward">+ R$ 50,00</div>
             </div>
-            <button class="btn-claim" onclick="claimMission('recPrata', 50, 50, 'convites')">Resgatar Bônus</button>
+            <button class="btn-claim" onclick="claimMission('recPrata', {type: 'expansao', convites: 50, investidores: 15}, 50)">Resgatar Bônus</button>
         </div>
 
         <div class="task-card">
             <div class="task-top">
                 <div class="task-info">
                     <div class="task-icon"><i class="fa-solid fa-star"></i></div>
-                    <div class="task-text"><h4>Recrutador Ouro</h4><p>100 Convites Totais</p></div>
+                    <div class="task-text"><h4>Recrutador Ouro</h4><p>100 Convites e 30 Investidores</p></div>
                 </div>
                 <div class="reward">+ R$ 250,00</div>
             </div>
-            <button class="btn-claim" onclick="claimMission('recOuro', 100, 250, 'convites')">Resgatar Bônus</button>
+            <button class="btn-claim" onclick="claimMission('recOuro', {type: 'expansao', convites: 100, investidores: 30}, 250)">Resgatar Bônus</button>
         </div>
 
         <div class="task-card">
@@ -348,7 +383,7 @@
                 </div>
                 <div class="reward">+ R$ 100,00</div>
             </div>
-            <button class="btn-claim" onclick="claimMission('liderEquipe', 1000, 100, 'recargaEquipe')">Resgatar Bônus</button>
+            <button class="btn-claim" onclick="claimMission('liderEquipe', {type: 'recargaEquipe', valor: 1000}, 100)">Resgatar Bônus</button>
         </div>
 
         <div class="task-card">
@@ -359,7 +394,7 @@
                 </div>
                 <div class="reward" style="background: #fff9c4 !important; color: #f57f17;">+ R$ 1.500,00</div>
             </div>
-            <button class="btn-claim" style="background: var(--mcd-yellow) !important; color: #000 !important;" onclick="claimMission('lenda', 500, 1500, 'convites')">Resgatar Lenda</button>
+            <button class="btn-claim" style="background: var(--mcd-yellow) !important; color: #000 !important;" onclick="claimMission('lenda', {type: 'expansao', convites: 500, investidores: 0}, 1500)">Resgatar Lenda</button>
         </div>
 
     </div>

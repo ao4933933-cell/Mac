@@ -13,7 +13,7 @@
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
       import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-      import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+      import { getFirestore, doc, setDoc, getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
       const firebaseConfig = {
         apiKey: "AIzaSyALPWsneYLrR8R6d7KlYwHcfgcWqoxha8Y",
@@ -28,7 +28,6 @@
       const auth = getAuth(app);
       const db = getFirestore(app);
 
-      // Configuração Global do SweetAlert Premium
       const Toast = Swal.mixin({
         toast: true,
         position: 'top',
@@ -43,7 +42,6 @@
         }
       });
 
-      // Capturar código de indicação da URL ao carregar a página
       window.addEventListener('DOMContentLoaded', () => {
           const urlParams = new URLSearchParams(window.location.search);
           const refCode = urlParams.get('ref');
@@ -52,7 +50,7 @@
           }
       });
 
-      // Função de Registro
+      // Função de Registro com Linhagem Completa (Pai, Avô, Bisavô)
       window.handleRegister = async (event) => {
           event.preventDefault();
           const email = document.getElementById('email').value;
@@ -74,11 +72,37 @@
           btn.disabled = true;
 
           try {
-              // 1. Criar usuário no Firebase Auth
+              let paiID = "DIRETO";
+              let avoID = "DIRETO";
+              let bisavoID = "DIRETO";
+
+              // 1. Lógica para descobrir a linhagem
+              if (inviteCode && inviteCode !== "") {
+                  const usersRef = collection(db, "users");
+                  const q = query(usersRef);
+                  const querySnapshot = await getDocs(q);
+                  
+                  let paiDoc = null;
+
+                  // Busca o dono do código de convite (Pai)
+                  querySnapshot.forEach((doc) => {
+                      if(doc.id.substring(0,8).toUpperCase() === inviteCode) {
+                          paiDoc = doc.data();
+                      }
+                  });
+
+                  if (paiDoc) {
+                      paiID = paiDoc.uid;
+                      avoID = paiDoc.refBy || "DIRETO";
+                      bisavoID = paiDoc.refAvo || "DIRETO";
+                  }
+              }
+
+              // 2. Criar usuário no Firebase Auth
               const userCredential = await createUserWithEmailAndPassword(auth, email, password);
               const user = userCredential.user;
 
-              // 2. Criar documento do usuário no Firestore com os dados iniciais e o vínculo de indicação
+              // 3. Criar documento do usuário no Firestore com a linhagem mapeada
               await setDoc(doc(db, "users", user.uid), {
                   uid: user.uid,
                   email: email,
@@ -89,7 +113,10 @@
                   tamanhoEquipe: 0,
                   checkinCount: 0,
                   lastCheckin: "",
-                  refBy: inviteCode || "DIRETO", // Se não houver código, marca como entrada direta
+                  // Mapeamento de níveis para comissão
+                  refBy: paiID,      // Nível 1 (Pai)
+                  refAvo: avoID,     // Nível 2 (Avô)
+                  refBisavo: bisavoID, // Nível 3 (Bisavô)
                   createdAt: new Date().toISOString()
               });
 
@@ -117,7 +144,6 @@
           }
       };
 
-      // Função Mostrar/Ocultar Senha
       window.togglePass = (id, el) => {
           const passInput = document.getElementById(id);
           const icon = el.querySelector('i');
@@ -279,7 +305,6 @@
             font-weight: 800;
         }
 
-        /* Customização SweetAlert */
         .swal2-popup {
             border-radius: 20px !important;
             font-family: 'Montserrat', sans-serif !important;

@@ -29,52 +29,100 @@
       const auth = getAuth(app);
       const db = getFirestore(app);
 
-      const Toast = Swal.mixin({
-        toast: true,
-        position: 'top',
-        showConfirmButton: false,
-        timer: 3000,
-        timerProgressBar: true,
-        background: '#ffffff',
-        color: '#1d1d1f'
-      });
+      // Variáveis globais para armazenar os membros por nível
+      let membrosNivel1 = [];
+      let membrosNivel2 = [];
+      let membrosNivel3 = [];
 
       async function loadTeamData(userId, shortId) {
           const usersRef = collection(db, "users");
-          let totalComissaoLucro = 0;
-          let totalMembros = 0;
           let totalRecargaEquipe = 0;
+          let totalMembros = 0;
 
           try {
+              // Limpar listas
+              membrosNivel1 = [];
+              membrosNivel2 = [];
+              membrosNivel3 = [];
+
+              // BUSCA NÍVEL 1
               const q1 = query(usersRef, where("refBy", "==", shortId));
               const snap1 = await getDocs(q1);
-              const membrosNivel1 = [];
-              
+              const idsNivel1 = [];
+
               snap1.forEach(doc => {
                   const d = doc.data();
                   const recarga = parseFloat(d.recarga || 0);
-                  totalComissaoLucro += recarga * 0.10;
+                  const sId = doc.id.substring(0, 8).toUpperCase(); // Precisamos do ShortID deles para o Nível 2
+                  membrosNivel1.push({ email: d.email, valor: recarga });
+                  idsNivel1.push(sId);
                   totalRecargaEquipe += recarga;
                   totalMembros++;
-                  membrosNivel1.push({ email: d.email, valor: recarga });
               });
+
+              // BUSCA NÍVEL 2 (Quem foi indicado pelos membros do Nível 1)
+              if (idsNivel1.length > 0) {
+                  const idsNivel2 = [];
+                  // Firestore 'in' suporta até 10 elementos por vez, mas usaremos um loop simples para garantir consistência
+                  for (const sId of idsNivel1) {
+                      const q2 = query(usersRef, where("refBy", "==", sId));
+                      const snap2 = await getDocs(q2);
+                      snap2.forEach(doc => {
+                          const d = doc.data();
+                          const recarga = parseFloat(d.recarga || 0);
+                          const sId2 = doc.id.substring(0, 8).toUpperCase();
+                          membrosNivel2.push({ email: d.email, valor: recarga });
+                          idsNivel2.push(sId2);
+                          totalRecargaEquipe += recarga;
+                          totalMembros++;
+                      });
+                  }
+
+                  // BUSCA NÍVEL 3 (Quem foi indicado pelos membros do Nível 2)
+                  if (idsNivel2.length > 0) {
+                      for (const sId2 of idsNivel2) {
+                          const q3 = query(usersRef, where("refBy", "==", sId2));
+                          const snap3 = await getDocs(q3);
+                          snap3.forEach(doc => {
+                              const d = doc.data();
+                              const recarga = parseFloat(d.recarga || 0);
+                              membrosNivel3.push({ email: d.email, valor: recarga });
+                              totalRecargaEquipe += recarga;
+                              totalMembros++;
+                          });
+                      }
+                  }
+              }
               
               document.getElementById('teamRecharge').innerText = "R$ " + totalRecargaEquipe.toFixed(2).replace('.', ',');
               document.getElementById('teamSize').innerText = totalMembros;
 
-              renderList(membrosNivel1);
+              // Inicializa mostrando o Nível 1
+              renderList(1);
 
           } catch (error) {
               console.error("Erro ao carregar equipe:", error);
           }
       }
 
-      function renderList(membros) {
+      window.renderList = (nivel) => {
           const container = document.getElementById('listContainer');
+          let membros = [];
+
+          if (nivel === 1) membros = membrosNivel1;
+          if (nivel === 2) membros = membrosNivel2;
+          if (nivel === 3) membros = membrosNivel3;
+
+          // Atualizar UI dos botões de nível
+          document.querySelectorAll('.level-item').forEach((el, idx) => {
+              if (idx + 1 === nivel) el.classList.add('active');
+              else el.classList.remove('active');
+          });
+
           if (membros.length === 0) {
               container.innerHTML = `
                   <div class="empty-icon"><i class="fa-solid fa-user-group"></i></div>
-                  <p>Nenhum membro encontrado neste nível.</p>
+                  <p>Nenhum membro encontrado no Nível ${nivel}.</p>
               `;
               return;
           }
@@ -99,12 +147,7 @@
               document.getElementById('inviteLink').value = inviteUrl;
               document.getElementById('displayId').innerText = "CÓDIGO: " + shortId;
 
-              const docRef = doc(db, "users", user.uid);
-              const docSnap = await getDoc(docRef);
-              
-              if (docSnap.exists()) {
-                  loadTeamData(user.uid, shortId);
-              }
+              loadTeamData(user.uid, shortId);
           } else {
               window.location.href = "index.html";
           }
@@ -140,7 +183,6 @@
             --text-muted: #86868b;
         }
 
-        /* SWAL Premium Consistente */
         .premium-swal-popup {
             width: 300px !important;
             border-radius: 25px !important;
@@ -298,6 +340,7 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.03);
             transition: 0.3s;
             position: relative;
+            cursor: pointer;
         }
 
         .level-item.active {
@@ -339,7 +382,6 @@
         }
         .list-container p { font-size: 14px; color: var(--text-muted); font-weight: 600; }
 
-        /* TAB BAR CONSISTENTE COM AS OUTRAS PÁGINAS */
         .bottom-nav {
             position: fixed;
             bottom: 25px; left: 20px; right: 20px;
@@ -390,17 +432,17 @@
         </div>
 
         <div class="levels-grid">
-            <div class="level-item active" onclick="this.parentElement.querySelectorAll('.level-item').forEach(e=>e.classList.remove('active')); this.classList.add('active')">
+            <div class="level-item active" onclick="renderList(1)">
                 <div class="active-dot"></div>
                 <b>Nível 1</b>
                 <span>Ganhe 10%</span>
             </div>
-            <div class="level-item" onclick="this.parentElement.querySelectorAll('.level-item').forEach(e=>e.classList.remove('active')); this.classList.add('active')">
+            <div class="level-item" onclick="renderList(2)">
                 <div class="active-dot"></div>
                 <b>Nível 2</b>
                 <span>Ganhe 3%</span>
             </div>
-            <div class="level-item" onclick="this.parentElement.querySelectorAll('.level-item').forEach(e=>e.classList.remove('active')); this.classList.add('active')">
+            <div class="level-item" onclick="renderList(3)">
                 <div class="active-dot"></div>
                 <b>Nível 3</b>
                 <span>Ganhe 1%</span>
@@ -409,7 +451,7 @@
 
         <div class="list-container" id="listContainer">
             <div class="empty-icon"><i class="fa-solid fa-user-group"></i></div>
-            <p>Nenhum membro encontrado neste nível.</p>
+            <p>Carregando membros...</p>
         </div>
 
     </div>

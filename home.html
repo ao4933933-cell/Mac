@@ -48,32 +48,59 @@
 
           if (userData.saldo < valor) {
               Swal.fire({
+                  title: '<span style="color: #db0007; font-weight: 800;">SALDO INSUFICIENTE</span>',
+                  html: '<p style="font-size: 14px; color: #666;">Você precisa de mais saldo para ativar este plano premium.</p>',
                   icon: 'error',
-                  title: 'Saldo Insuficiente',
-                  text: 'Faça uma recarga para adquirir este plano.',
-                  confirmButtonColor: '#db0007'
+                  showCancelButton: true,
+                  confirmButtonText: 'Recarregar Agora',
+                  cancelButtonText: 'Talvez depois',
+                  confirmButtonColor: '#db0007',
+                  cancelButtonColor: '#8e8e93',
+                  borderRadius: '25px',
+                  background: '#fff'
+              }).then((result) => {
+                  if (result.isConfirmed) window.location.href = 'deposito.html';
               });
               return;
           }
 
           Swal.fire({
-              title: 'Confirmar Investimento?',
-              text: `Você está adquirindo o ${planoNome} por R$ ${valor.toFixed(2)}`,
-              icon: 'warning',
+              title: `<span style="color: #1a1a1b; font-weight: 800;">${planoNome}</span>`,
+              html: `
+                <div style="text-align: center; padding: 10px;">
+                    <img src="${img}" style="width: 120px; height: 120px; border-radius: 20px; object-fit: cover; margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.1);">
+                    <p style="color: #666; font-size: 14px;">Confirmar investimento de <b style="color: #27ae60;">R$ ${valor.toFixed(2)}</b>?</p>
+                    <p style="color: #db0007; font-size: 12px; font-weight: 700; margin-top: 5px;">LUCRO DIÁRIO: R$ ${lucroDiario.toFixed(2)}</p>
+                </div>
+              `,
               showCancelButton: true,
-              confirmButtonText: 'Confirmar',
-              cancelButtonText: 'Cancelar',
-              confirmButtonColor: '#db0007'
+              confirmButtonText: 'ATIVAR AGORA',
+              cancelButtonText: 'CANCELAR',
+              confirmButtonColor: '#db0007',
+              cancelButtonColor: '#f5f5f7',
+              buttonsStyling: true,
+              customClass: {
+                  confirmButton: 'custom-swal-button',
+                  cancelButton: 'custom-swal-cancel'
+              },
+              borderRadius: '35px'
           }).then(async (result) => {
               if (result.isConfirmed) {
                   try {
-                      // 1. Deduz saldo e adiciona plano
+                      // Overlay de carregamento premium
+                      Swal.fire({
+                          title: 'Processando...',
+                          html: 'Estamos preparando seu contrato de rendimento.',
+                          allowOutsideClick: false,
+                          didOpen: () => { Swal.showLoading(); }
+                      });
+
                       const novoPlano = {
                           nome: planoNome,
                           valor: valor,
                           lucroDiario: lucroDiario,
                           dataCompra: new Date().toISOString(),
-                          proximoPagamento: getMeiaNoiteProxima(), // Define 00:00:00 do dia seguinte
+                          proximoPagamento: getMeiaNoiteProxima(), 
                           status: 'ativo',
                           imagem: img
                       };
@@ -85,19 +112,24 @@
                       });
 
                       // 2. Distribuir Comissões (Nível 1: 15%, Nível 2: 3%, Nível 3: 1%)
-                      await distribuirComissoes(userData.refBy, valor);
+                      await distribuirComissoesLinhagem(userData, valor);
 
-                      Swal.fire('Sucesso!', 'Seu plano está ativo e gerando lucros.', 'success')
-                      .then(() => window.location.href = 'planos.html');
+                      Swal.fire({
+                          icon: 'success',
+                          title: '<span style="color: #27ae60;">PLANO ATIVADO!</span>',
+                          text: 'Seu lucro diário começa em instantes.',
+                          confirmButtonColor: '#27ae60',
+                          borderRadius: '25px'
+                      }).then(() => window.location.href = 'planos.html');
 
                   } catch (e) {
+                      console.error(e);
                       Toast.fire({ icon: 'error', title: 'Erro ao processar investimento.' });
                   }
               }
           });
       };
 
-      // Função para calcular a próxima meia-noite exata
       function getMeiaNoiteProxima() {
           const agora = new Date();
           const amanha = new Date(agora);
@@ -106,32 +138,27 @@
           return amanha.toISOString();
       }
 
-      // Função de distribuição de comissão recursiva para 3 níveis
-      async function distribuirComissoes(refBy, valorPlano) {
-          if (!refBy || refBy === "DIRETO") return;
+      async function distribuirComissoesLinhagem(userData, valorPlano) {
+          const configuracaoNiveis = [
+              { id: userData.refBy, porc: 0.15 },      
+              { id: userData.refAvo, porc: 0.03 },     
+              { id: userData.refBisavo, porc: 0.01 }   
+          ];
 
-          const niveis = [0.15, 0.03, 0.01]; // Alterado nível 1 para 15%
-          let atualRef = refBy;
+          for (const nivel of configuracaoNiveis) {
+              if (nivel.id && nivel.id !== "DIRETO") {
+                  try {
+                      const refBeneficiario = doc(db, "users", nivel.id);
+                      const valorComissao = valorPlano * nivel.porc;
 
-          for (let i = 0; i < niveis.length; i++) {
-              if (!atualRef || atualRef === "DIRETO") break;
-
-              const usersRef = collection(db, "users");
-              const allUsers = await getDocs(usersRef);
-              let paiDoc = null;
-              allUsers.forEach(doc => {
-                  if(doc.id.substring(0,8).toUpperCase() === atualRef) paiDoc = doc;
-              });
-
-              if (paiDoc) {
-                  const comissao = valorPlano * niveis[i];
-                  await updateDoc(doc(db, "users", paiDoc.id), {
-                      lucro: increment(comissao),
-                      recargaEquipe: increment(valorPlano)
-                  });
-                  atualRef = paiDoc.data().refBy; // Sobe para o próximo nível
-              } else {
-                  break;
+                      await updateDoc(refBeneficiario, {
+                          saldo: increment(valorComissao),
+                          lucro: increment(valorComissao),
+                          recargaEquipe: increment(valorPlano)
+                      });
+                  } catch (error) {
+                      console.error("Erro ao creditar comissão para:", nivel.id, error);
+                  }
               }
           }
       }
@@ -167,21 +194,23 @@
 
         body { padding-bottom: 120px; }
 
+        /* Banner Ultra-Vibrante */
         .banner {
             width: 100%;
             height: 260px;
-            background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url('banner.jpg'); 
+            background: url('banner.jpg'); 
             background-size: cover;
             background-position: center;
             border-bottom-left-radius: 45px;
             border-bottom-right-radius: 45px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            box-shadow: 0 10px 30px rgba(219, 0, 7, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
+            filter: brightness(1.1) saturate(1.4) contrast(1.1);
         }
 
-        .banner h1 { display: none; } /* Nome removido conforme solicitado */
+        .banner h1 { display: none; }
 
         .quick-nav {
             display: grid;
@@ -236,7 +265,7 @@
         .marquee-content {
             display: flex;
             white-space: nowrap;
-            animation: scroll-left 15s linear infinite; /* Velocidade aumentada conforme solicitado */
+            animation: scroll-left 15s linear infinite;
         }
 
         .marquee-content span { font-size: 13px; font-weight: 500; color: #555; padding-right: 40px; }
@@ -292,6 +321,21 @@
             cursor: pointer;
             border: none;
             width: calc(100% - 50px);
+        }
+
+        /* Estilos adicionais para botões SWAL customizados */
+        .custom-swal-button {
+            border-radius: 50px !important;
+            padding: 12px 35px !important;
+            font-weight: 800 !important;
+            letter-spacing: 1px;
+        }
+
+        .custom-swal-cancel {
+            border-radius: 50px !important;
+            padding: 12px 35px !important;
+            font-weight: 800 !important;
+            color: #8e8e93 !important;
         }
 
         .btn-locked {
